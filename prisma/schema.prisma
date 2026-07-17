@@ -1,0 +1,269 @@
+// Prisma schema for "No Signal" ticket booking site
+// Money is stored as Int in satang (THB minor unit) to match Omise's own API convention.
+
+generator client {
+  provider        = "prisma-client"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["partialIndexes"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------- Auth.js required models ----------
+
+model User {
+  id            String    @id @default(uuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  passwordHash  String? // null for Google-only accounts
+  phone         String?
+  role          UserRole  @default(USER)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts            Account[]
+  sessions            Session[]
+  bookings            Booking[]
+  passwordResetTokens PasswordResetToken[]
+  ticketsCheckedIn    Ticket[]             @relation("TicketCheckedInBy")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+model Account {
+  id                String  @id @default(uuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ---------- Event / Zones / Tables ----------
+
+model Event {
+  id           String      @id @default(uuid())
+  slug         String      @unique
+  name         String
+  description  String?     @db.Text
+  venueName    String?
+  address      String?
+  heroImageUrl String?
+  timezone     String      @default("Asia/Bangkok")
+  status       EventStatus @default(DRAFT)
+  startAt      DateTime
+  endAt        DateTime
+  doorsOpenAt  DateTime?
+  salesStartAt DateTime?
+  salesEndAt   DateTime?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  zones    Zone[]
+  bookings Booking[]
+}
+
+enum EventStatus {
+  DRAFT
+  PUBLISHED
+  CLOSED
+}
+
+model Zone {
+  id            String   @id @default(uuid())
+  eventId       String
+  name          String
+  type          ZoneType
+  description   String?  @db.Text
+  priceSatang   Int
+  totalCapacity Int
+  sortOrder     Int      @default(0)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  event        Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  tables       Table[]
+  bookingItems BookingItem[]
+}
+
+enum ZoneType {
+  GENERAL_ADMISSION
+  VIP_TABLE
+}
+
+model Table {
+  id           String   @id @default(uuid())
+  zoneId       String
+  label        String
+  capacity     Int
+  priceSatang  Int?
+  isActive     Boolean  @default(true)
+  // Placement on the venue floor-plan map. Percentages (0-100) relative to
+  // that floor's map container, so the map stays responsive at any size.
+  floor        Int      @default(1)
+  positionXPct Float    @default(50)
+  positionYPct Float    @default(50)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  zone         Zone          @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  bookingItems BookingItem[]
+
+  @@index([floor])
+}
+
+// ---------- Booking / Payment / Ticket ----------
+
+model Booking {
+  id            String        @id @default(uuid())
+  userId        String
+  eventId       String
+  status        BookingStatus @default(HOLD)
+  holdExpiresAt DateTime?
+  totalSatang   Int
+  currency      String        @default("THB")
+  contactName   String
+  contactEmail  String
+  contactPhone  String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  paidAt        DateTime?
+
+  user     User          @relation(fields: [userId], references: [id])
+  event    Event         @relation(fields: [eventId], references: [id])
+  items    BookingItem[]
+  payments Payment[]
+
+  @@index([status, holdExpiresAt])
+}
+
+enum BookingStatus {
+  HOLD
+  PAID
+  EXPIRED
+  CANCELLED
+  FAILED
+}
+
+model BookingItem {
+  id              String   @id @default(uuid())
+  bookingId       String
+  zoneId          String
+  tableId         String?
+  quantity        Int
+  unitPriceSatang Int
+  subtotalSatang  Int
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+
+  booking Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  zone    Zone     @relation(fields: [zoneId], references: [id])
+  table   Table?   @relation(fields: [tableId], references: [id])
+  tickets Ticket[]
+
+  // Defense-in-depth against double-booking a VIP table: Postgres itself refuses
+  // a second active BookingItem on the same table even if application logic has a bug.
+  @@unique([tableId], where: raw("\"isActive\" = true AND \"tableId\" IS NOT NULL"), map: "booking_item_active_table_uidx")
+  @@index([zoneId, isActive])
+}
+
+model Payment {
+  id             String        @id @default(uuid())
+  bookingId      String
+  provider       String        @default("OMISE")
+  method         PaymentMethod
+  omiseChargeId  String?
+  omiseSourceId  String?
+  status         PaymentStatus @default(PENDING)
+  amountSatang   Int
+  rawResponse    Json?
+  failureCode    String?
+  failureMessage String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  paidAt         DateTime?
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([bookingId])
+  @@index([omiseChargeId])
+}
+
+enum PaymentMethod {
+  CARD
+  PROMPTPAY
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  EXPIRED
+}
+
+model Ticket {
+  id            String       @id @default(uuid())
+  bookingItemId String
+  ticketNumber  String       @unique
+  status        TicketStatus @default(VALID)
+  usedAt        DateTime?
+  usedByUserId  String?
+  createdAt     DateTime     @default(now())
+
+  bookingItem BookingItem @relation(fields: [bookingItemId], references: [id], onDelete: Cascade)
+  usedBy      User?       @relation("TicketCheckedInBy", fields: [usedByUserId], references: [id])
+
+  @@index([bookingItemId])
+}
+
+enum TicketStatus {
+  VALID
+  USED
+  VOID
+}
