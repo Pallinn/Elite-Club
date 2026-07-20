@@ -160,16 +160,44 @@ async function main() {
     await prisma.table.upsert({ where: { id }, update: fields, create: { id, ...fields } });
   }
 
-  const adminPasswordHash = await bcrypt.hash("admin12345", 12);
-  const adminFields = {
-    name: "No Signal Admin",
-    passwordHash: adminPasswordHash,
-    role: "ADMIN" as const,
-  };
+  // Team-shared admin logins. All five accounts share the same password by
+  // design (per team ops); the username differentiates the audit trail.
+  const teamAdminPasswordHash = await bcrypt.hash("elite_q", 12);
+  const teamAdmins = [
+    { email: "elite_pan@elite.local", name: "Pan" },
+    { email: "elite_gong@elite.local", name: "Gong" },
+    { email: "elite_japam@elite.local", name: "Japam" },
+    { email: "elite_lin@elite.local", name: "Lin" },
+    { email: "elite_c@elite.local", name: "C" },
+  ];
+  for (const a of teamAdmins) {
+    const fields = {
+      name: a.name,
+      passwordHash: teamAdminPasswordHash,
+      role: "ADMIN" as const,
+    };
+    await prisma.user.upsert({
+      where: { email: a.email },
+      update: fields,
+      create: { email: a.email, ...fields },
+    });
+  }
+
+  // Original seeded fallback admin (kept for backwards compatibility).
+  const legacyAdminHash = await bcrypt.hash("admin12345", 12);
   await prisma.user.upsert({
     where: { email: "admin@no-signal.example" },
-    update: adminFields,
-    create: { email: "admin@no-signal.example", ...adminFields },
+    update: {
+      name: "No Signal Admin",
+      passwordHash: legacyAdminHash,
+      role: "ADMIN" as const,
+    },
+    create: {
+      email: "admin@no-signal.example",
+      name: "No Signal Admin",
+      passwordHash: legacyAdminHash,
+      role: "ADMIN" as const,
+    },
   });
 
   console.log(`Seeded event "${event.name}" (${event.slug})`);
@@ -177,7 +205,8 @@ async function main() {
     `Zones: ${floor1Vip.name}, ${floor1Vvip.name}, ${floor2Vip.name}, ${floor2Vvip.name}`
   );
   console.log(`Tables: ${tables.length}`);
-  console.log("Admin login: admin@no-signal.example / admin12345");
+  console.log(`Team admins: ${teamAdmins.map((a) => a.email).join(", ")}`);
+  console.log("Password (all): elite_q");
 }
 
 main()

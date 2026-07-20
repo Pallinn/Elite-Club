@@ -145,6 +145,8 @@ model Table {
   capacity     Int
   priceSatang  Int?
   isActive     Boolean  @default(true)
+  // Admin-set lock: prevents new holds. Existing bookings unaffected.
+  isLocked     Boolean  @default(false)
   // Placement on the venue floor-plan map. Percentages (0-100) relative to
   // that floor's map container, so the map stays responsive at any size.
   floor        Int      @default(1)
@@ -276,4 +278,22 @@ enum TicketStatus {
   VALID
   USED
   VOID
+}
+
+// ---------- Activity log ----------
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  // Who did it. Null for system-triggered events (cron sweep, webhooks).
+  actorUserId String?
+  actorLabel  String? // Cached display name, so log survives user deletion
+  action      String // e.g. "booking.created", "ticket.void", "table.lock"
+  entityType  String? // e.g. "Booking", "Ticket", "Table"
+  entityId    String?
+  metadata    Json? // Free-form payload (before/after, message, IP, etc.)
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([entityType, entityId])
+  @@index([actorUserId])
 }

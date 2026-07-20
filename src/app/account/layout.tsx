@@ -1,7 +1,9 @@
 import Link from "next/link";
+import { auth } from "@/lib/auth";
 import { SiteHeader } from "@/components/site-header";
 
-export default function AccountLayout({ children }: { children: React.ReactNode }) {
+export default async function AccountLayout({ children }: { children: React.ReactNode }) {
+  const session = await auth();
   return (
     <div className="flex min-h-screen flex-col bg-black">
       <SiteHeader />
@@ -13,6 +15,14 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
           <Link href="/account/bookings" className="block rounded px-3 py-2 text-neutral-300 hover:bg-white/5 hover:text-white">
             My bookings
           </Link>
+           {session?.user?.role === "ADMIN" && (
+            <Link
+              href="/admin"
+              className="block rounded bg-orange-500/10 px-3 py-2 font-medium text-orange-400 hover:bg-orange-500/20"
+            >
+              Admin Dashboard
+            </Link>
+          )}
         </nav>
         <div className="min-w-0 flex-1">{children}</div>
       </div>

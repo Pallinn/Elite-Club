@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createHoldSchema } from "@/lib/validators/booking";
 import { activeBookingItemFilter } from "@/lib/availability";
+import { recordAudit } from "@/lib/audit";
 
 const HOLD_TTL_MINUTES = 12;
 
@@ -55,6 +56,9 @@ export async function POST(request: Request) {
           const table = await tx.table.findUnique({ where: { id: item.tableId } });
           if (!table || table.zoneId !== zone.id || !table.isActive) {
             throw new HoldConflictError("That table is no longer available.");
+          }
+          if (table.isLocked) {
+            throw new HoldConflictError(`${table.label} is currently locked by staff.`);
           }
 
           const alreadyBooked = await tx.bookingItem.findFirst({
@@ -116,10 +120,23 @@ export async function POST(request: Request) {
         },
       });
 
-      return { bookingId: booking.id, holdExpiresAt };
+      return { bookingId: booking.id, holdExpiresAt, totalSatang, itemCount: itemsToCreate.length };
     });
 
-    return NextResponse.json(result);
+    await recordAudit({
+      actorUserId: session.user.id,
+      actorLabel: session.user.name ?? session.user.email ?? null,
+      action: "booking.created",
+      entityType: "Booking",
+      entityId: result.bookingId,
+      metadata: {
+        totalSatang: result.totalSatang,
+        itemCount: result.itemCount,
+        holdExpiresAt: result.holdExpiresAt.toISOString(),
+      },
+    });
+
+    return NextResponse.json({ bookingId: result.bookingId, holdExpiresAt: result.holdExpiresAt });
   } catch (err) {
     if (err instanceof HoldConflictError) {
       return NextResponse.json({ error: err.message }, { status: 409 });

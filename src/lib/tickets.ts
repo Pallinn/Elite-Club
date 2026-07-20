@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { sendPurchaseEmail } from "@/lib/email/send";
 import { generateUniqueJoinCode } from "@/lib/join-code";
 import { getLogoPngBuffer, getTicketQrPngBuffer } from "@/lib/email/assets";
+import { recordAudit } from "@/lib/audit";
 
 function generateTicketNumber(): string {
   const random = crypto.randomBytes(4).toString("hex").toUpperCase();
@@ -50,6 +51,12 @@ export async function finalizeBookingPayment(bookingId: string) {
   });
 
   if (!alreadyPaid) {
+    await recordAudit({
+      action: "booking.paid",
+      entityType: "Booking",
+      entityId: bookingId,
+    });
+
     // Don't let a flaky email provider turn a successful payment into a failed
     // webhook response — tickets are already minted; email can be resent.
     try {

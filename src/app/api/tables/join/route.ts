@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { sendJoinEmail } from "@/lib/email/send";
 import { getLogoPngBuffer, getTicketQrPngBuffer } from "@/lib/email/assets";
+import { recordAudit } from "@/lib/audit";
 
 const joinSchema = z.object({
   code: z.string().trim().min(1),
@@ -52,6 +53,19 @@ export async function POST(request: Request) {
       bookingItemId: item.id,
       ticketNumber: generateTicketNumber(),
       holderUserId: session.user.id,
+    },
+  });
+
+  await recordAudit({
+    actorUserId: session.user.id,
+    actorLabel: session.user.name ?? session.user.email ?? null,
+    action: "ticket.join_redeemed",
+    entityType: "Ticket",
+    entityId: ticket.id,
+    metadata: {
+      tableLabel: item.table.label,
+      joinCode: code,
+      bookingItemId: item.id,
     },
   });
 
