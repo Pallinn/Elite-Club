@@ -1,6 +1,8 @@
 import crypto from "node:crypto";
 import { prisma } from "@/lib/prisma";
-import { sendTicketsEmail } from "@/lib/email/send";
+import { sendPurchaseEmail } from "@/lib/email/send";
+import { generateUniqueJoinCode } from "@/lib/join-code";
+import { getLogoPngBuffer, getTicketQrPngBuffer } from "@/lib/email/assets";
 
 function generateTicketNumber(): string {
   const random = crypto.randomBytes(4).toString("hex").toUpperCase();
@@ -8,9 +10,9 @@ function generateTicketNumber(): string {
 }
 
 /**
- * Marks a booking as paid and mints one Ticket row per admission (GA: one per
- * quantity, VIP table: one per booking item / whole table). Idempotent - safe
- * to call more than once for the same booking (e.g. a retried webhook).
+ * Marks a booking as paid and mints one Ticket row per admission (one per
+ * quantity, or one per VIP table item). Idempotent — safe to call more than
+ * once for the same booking (e.g. a retried webhook).
  */
 export async function finalizeBookingPayment(bookingId: string) {
   const alreadyPaid = await prisma.$transaction(async (tx) => {
@@ -27,12 +29,21 @@ export async function finalizeBookingPayment(bookingId: string) {
     });
 
     for (const item of booking.items) {
-      if (item.tickets.length > 0) continue; // already minted (retry safety)
-      const ticketsToCreate = Array.from({ length: item.quantity }, () => ({
-        bookingItemId: item.id,
-        ticketNumber: generateTicketNumber(),
-      }));
-      await tx.ticket.createMany({ data: ticketsToCreate });
+      if (item.tickets.length === 0) {
+        const ticketsToCreate = Array.from({ length: item.quantity }, () => ({
+          bookingItemId: item.id,
+          ticketNumber: generateTicketNumber(),
+          holderUserId: booking.userId,
+        }));
+        await tx.ticket.createMany({ data: ticketsToCreate });
+      }
+
+      // Each VIP table gets a shareable join code once paid, so friends can
+      // redeem it for their own ticket to the same table.
+      if (item.tableId && !item.joinCode) {
+        const joinCode = await generateUniqueJoinCode(tx);
+        await tx.bookingItem.update({ where: { id: item.id }, data: { joinCode } });
+      }
     }
 
     return false;
@@ -40,45 +51,45 @@ export async function finalizeBookingPayment(bookingId: string) {
 
   if (!alreadyPaid) {
     // Don't let a flaky email provider turn a successful payment into a failed
-    // webhook response - the tickets are already minted; email can be resent later.
+    // webhook response — tickets are already minted; email can be resent.
     try {
-      await sendBookingTicketsEmail(bookingId);
+      await sendBookingPurchaseEmail(bookingId);
     } catch (err) {
-      console.error(`Failed to send tickets email for booking ${bookingId}:`, err);
+      console.error(`Failed to send purchase email for booking ${bookingId}:`, err);
     }
   }
 }
 
-export async function sendBookingTicketsEmail(bookingId: string, isResend = false) {
+export async function sendBookingPurchaseEmail(bookingId: string) {
   const booking = await prisma.booking.findUnique({
     where: { id: bookingId },
     include: {
-      event: true,
-      items: { include: { zone: true, table: true, tickets: true } },
+      items: { include: { table: true, tickets: true } },
     },
   });
   if (!booking) return;
 
-  const appUrl = process.env.APP_URL ?? "";
-  const tickets = booking.items.flatMap((item) =>
-    item.tickets.map((ticket) => ({
+  // Build one "table entry" per table item, using the item's join code as the
+  // shareable Table Code and the first ticket for the QR.
+  const entries = [] as {
+    tableCode: string;
+    qrPng: Buffer;
+    ticketNumber: string;
+  }[];
+  for (const item of booking.items) {
+    if (!item.table || !item.joinCode || item.tickets.length === 0) continue;
+    const ticket = item.tickets[0];
+    entries.push({
+      tableCode: item.joinCode,
+      qrPng: await getTicketQrPngBuffer(ticket.id),
       ticketNumber: ticket.ticketNumber,
-      label: item.table ? item.table.label : item.zone.name,
-      qrUrl: `${appUrl}/api/tickets/${ticket.id}/qr`,
-    }))
-  );
-  if (tickets.length === 0) return;
+    });
+  }
+  if (entries.length === 0) return;
 
-  await sendTicketsEmail({
+  await sendPurchaseEmail({
     to: booking.contactEmail,
-    contactName: booking.contactName,
-    eventName: booking.event.name,
-    venueName: booking.event.venueName ?? "",
-    startAt: booking.event.startAt.toLocaleString("en-US", {
-      dateStyle: "medium",
-      timeStyle: "short",
-    }),
-    tickets,
-    isResend,
+    logoPng: getLogoPngBuffer(),
+    tables: entries,
   });
 }

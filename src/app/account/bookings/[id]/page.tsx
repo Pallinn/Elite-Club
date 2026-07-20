@@ -8,6 +8,7 @@ import { formatSatang } from "@/lib/money";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ResendTicketsButton } from "@/components/account/resend-tickets-button";
+import { CopyCodeButton } from "@/components/account/copy-code-button";
 
 export default async function BookingDetailPage({
   params,
@@ -35,10 +36,13 @@ export default async function BookingDetailPage({
       item.tickets.map(async (ticket) => ({
         ...ticket,
         label: item.table ? item.table.label : item.zone.name,
+        isMine: ticket.holderUserId === session.user.id,
         qrDataUrl: await QRCode.toDataURL(buildTicketQrPayload(ticket.id)),
       }))
     )
   );
+
+  const tableJoinCodes = booking.items.filter((item) => item.table && item.joinCode);
 
   return (
     <div className="space-y-6">
@@ -62,6 +66,32 @@ export default async function BookingDetailPage({
 
       {booking.status === "PAID" && (
         <>
+          {tableJoinCodes.length > 0 && (
+            <div className="space-y-3">
+              {tableJoinCodes.map((item) => {
+                const claimed = item.tickets?.length ?? 0;
+                return (
+                  <Card key={item.id} className="border-primary/30 bg-primary/5">
+                    <CardContent className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm text-white">
+                          {item.table?.label} — share this code so friends can join
+                        </p>
+                        <p className="mt-1 font-mono text-2xl font-bold tracking-[0.3em] text-primary">
+                          {item.joinCode}
+                        </p>
+                        <p className="mt-1 text-xs text-neutral-400">
+                          {claimed} of {item.table?.capacity} seats claimed
+                        </p>
+                      </div>
+                      <CopyCodeButton code={item.joinCode ?? ""} />
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+
           <div className="flex justify-end">
             <ResendTicketsButton bookingId={booking.id} />
           </div>
@@ -70,7 +100,14 @@ export default async function BookingDetailPage({
             {tickets.map((ticket) => (
               <Card key={ticket.id} className="border-white/10 bg-neutral-950">
                 <CardHeader>
-                  <CardTitle className="text-white text-base">{ticket.label}</CardTitle>
+                  <CardTitle className="flex items-center justify-between text-base text-white">
+                    {ticket.label}
+                    {!ticket.isMine && (
+                      <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-neutral-500">
+                        Guest ticket
+                      </span>
+                    )}
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="flex flex-col items-center gap-3">
                   <Image

@@ -30,6 +30,7 @@ model User {
   bookings            Booking[]
   passwordResetTokens PasswordResetToken[]
   ticketsCheckedIn    Ticket[]             @relation("TicketCheckedInBy")
+  ticketsHeld         Ticket[]             @relation("TicketHolder")
 }
 
 enum UserRole {
@@ -200,6 +201,10 @@ model BookingItem {
   unitPriceSatang Int
   subtotalSatang  Int
   isActive        Boolean  @default(true)
+  // 6-character alphanumeric code, set once payment succeeds for a VIP
+  // table. Anyone with the code can join the table (their own e-ticket,
+  // up to the table's capacity) via /join.
+  joinCode        String?  @unique
   createdAt       DateTime @default(now())
 
   booking Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
@@ -250,6 +255,9 @@ enum PaymentStatus {
 model Ticket {
   id            String       @id @default(uuid())
   bookingItemId String
+  // Who this specific ticket belongs to: the buyer for the first ticket on
+  // an item, or whoever redeemed the table's join code for the rest.
+  holderUserId  String?
   ticketNumber  String       @unique
   status        TicketStatus @default(VALID)
   usedAt        DateTime?
@@ -257,9 +265,11 @@ model Ticket {
   createdAt     DateTime     @default(now())
 
   bookingItem BookingItem @relation(fields: [bookingItemId], references: [id], onDelete: Cascade)
+  holder      User?       @relation("TicketHolder", fields: [holderUserId], references: [id])
   usedBy      User?       @relation("TicketCheckedInBy", fields: [usedByUserId], references: [id])
 
   @@index([bookingItemId])
+  @@index([holderUserId])
 }
 
 enum TicketStatus {

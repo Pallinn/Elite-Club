@@ -11,11 +11,10 @@ import { ScrollSnap } from "@/components/marketing/scroll-snap";
 
 export const dynamic = "force-dynamic";
 
-const TIER_ORDER = ["VVIP", "VIP", "Stand Table"];
+const TIER_ORDER = ["VVIP", "VIP"];
 const TIER_TABLES_LABEL: Record<string, string> = {
-  VVIP: "V1 Lounge (Floor 1), Floor 2 Lounge",
-  VIP: "V2 Booth (Floor 1)",
-  "Stand Table": "Tables 1–12 (Floor 1) + 13–22 (Floor 2)",
+  VVIP: "V1 Lounge, V2 Booth (Floor 1), Floor 2 Lounge",
+  VIP: "Tables 1–16 (Floor 1) + 17–21 (Floor 2)",
 };
 
 function tierNameFromZone(zoneName: string) {
@@ -29,19 +28,19 @@ export default async function Home() {
 
   const tierMap = new Map<
     string,
-    { capacity: number; prices: number[]; booked: number; total: number; drinks: string }
+    { capacities: number[]; prices: number[]; booked: number; total: number; drinks: string }
   >();
   for (const zone of zones) {
     const tierName = tierNameFromZone(zone.name);
     const entry = tierMap.get(tierName) ?? {
-      capacity: 0,
+      capacities: [] as number[],
       prices: [] as number[],
       booked: 0,
       total: 0,
       drinks: zone.description ?? "",
     };
     for (const table of zone.tables) {
-      entry.capacity = table.capacity;
+      entry.capacities.push(table.capacity);
       entry.prices.push(table.priceSatang ?? zone.priceSatang);
       entry.total += 1;
       if (table.isBooked) entry.booked += 1;
@@ -55,7 +54,7 @@ export default async function Home() {
       id: name,
       name,
       tablesLabel: TIER_TABLES_LABEL[name] ?? "",
-      capacity: entry.capacity,
+      capacity: entry.capacities.length ? Math.max(...entry.capacities) : 0,
       fromSatang: entry.prices.length ? Math.min(...entry.prices) : 0,
       drinks: entry.drinks,
       soldOut: entry.total > 0 && entry.booked === entry.total,

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 const STEPS = [
   { key: "ticket", label: "01 Ticket" },
@@ -9,10 +10,12 @@ const STEPS = [
 export function BookingShell({
   step,
   backHref,
+  tabs,
   children,
 }: {
   step: (typeof STEPS)[number]["key"];
   backHref: string;
+  tabs?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const activeIndex = STEPS.findIndex((s) => s.key === step);
@@ -26,16 +29,15 @@ export function BookingShell({
         >
           ← Back
         </Link>
-        <Link href="/" className="font-heading text-base font-bold tracking-widest text-white">
-          <span className="text-primary">NO</span>SIGNAL
+        <Link href="/" className="flex items-center">
+          <Image src="/images/logo.png" alt="Elite" width={90} height={28} />
         </Link>
-        <p className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-neutral-500">
-          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-cyan-400" />
-          Secure booking
-        </p>
+        <div className="w-[76px]" />
       </header>
 
       <div className="mx-auto max-w-6xl px-4 py-10 sm:px-8">
+        {tabs && <div className="mb-10">{tabs}</div>}
+
         <div className="mb-10">
           <div className="flex">
             {STEPS.map((s, i) => (

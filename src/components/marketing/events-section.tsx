@@ -30,7 +30,7 @@ export function EventsSection({ tiers }: { tiers: TierCard[] }) {
           </p>
         </div>
 
-        <div className="mt-12 grid gap-6 sm:grid-cols-3">
+        <div className="mt-12 grid gap-6 sm:grid-cols-2">
           {tiers.map((tier) => (
             <div
               key={tier.id}

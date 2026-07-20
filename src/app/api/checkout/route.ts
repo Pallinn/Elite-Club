@@ -3,6 +3,7 @@ import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { omise } from "@/lib/omise";
+import { finalizeBookingPayment } from "@/lib/tickets";
 
 const checkoutSchema = z.discriminatedUnion("method", [
   z.object({ bookingId: z.string().min(1), method: z.literal("PROMPTPAY") }),
@@ -56,19 +57,31 @@ export async function POST(request: Request) {
         description: `No Signal booking ${booking.id}`,
       });
 
+      const status = mapChargeStatus(charge.status);
       await prisma.payment.update({
         where: { id: payment.id },
         data: {
           omiseSourceId: source.id,
           omiseChargeId: charge.id,
-          status: mapChargeStatus(charge.status),
+          status,
           rawResponse: charge as unknown as object,
         },
       });
+      // Rare for PromptPay (it's normally an async bank-app confirmation),
+      // but handle it the same way as card for consistency. The webhook is
+      // the authoritative path for the usual case; this just avoids relying
+      // on it alone (which needs a public URL, e.g. via ngrok in local dev).
+      if (status === "SUCCEEDED") {
+        await finalizeBookingPayment(booking.id);
+      }
 
+      // The PromptPay QR URI is populated on the CHARGE's echoed source
+      // (charge.source.scannable_code.image.download_uri), not on the source
+      // returned by sources.create — that one is null until a charge exists.
+      const chargeSource = (charge as unknown as { source?: { scannable_code?: { image?: { download_uri?: string } } } }).source;
       return NextResponse.json({
         paymentId: payment.id,
-        qrImageUrl: source.scannable_code?.image?.download_uri ?? null,
+        qrImageUrl: chargeSource?.scannable_code?.image?.download_uri ?? null,
         chargeId: charge.id,
       });
     }
@@ -81,16 +94,23 @@ export async function POST(request: Request) {
       description: `No Signal booking ${booking.id}`,
     });
 
+    const status = mapChargeStatus(charge.status);
     await prisma.payment.update({
       where: { id: payment.id },
       data: {
         omiseChargeId: charge.id,
-        status: mapChargeStatus(charge.status),
+        status,
         rawResponse: charge as unknown as object,
         failureCode: charge.failure_code ?? null,
         failureMessage: charge.failure_message ?? null,
       },
     });
+    // Non-3DS test cards resolve to "successful" immediately, before any
+    // webhook fires - finalize right away rather than depending solely on a
+    // webhook endpoint being reachable (it needs a public URL to work locally).
+    if (status === "SUCCEEDED") {
+      await finalizeBookingPayment(booking.id);
+    }
 
     return NextResponse.json({
       paymentId: payment.id,

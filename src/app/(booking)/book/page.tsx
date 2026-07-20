@@ -1,7 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { getEventAvailability } from "@/lib/availability";
-import { BookingShell } from "@/components/booking/booking-shell";
-import { FloorPlanBooking } from "@/components/booking/floor-plan-booking";
+import { BookPageTabs } from "@/components/booking/book-page-tabs";
 import type { FloorTable } from "@/components/booking/floor-plan-map";
 
 export const dynamic = "force-dynamic";
@@ -39,14 +38,12 @@ export default async function BookPage() {
   );
 
   return (
-    <BookingShell step="ticket" backHref="/">
-      <FloorPlanBooking
-        eventId={event.id}
-        eventName={event.name}
-        venueName={event.venueName}
-        startAt={event.startAt.toISOString()}
-        tables={tables}
-      />
-    </BookingShell>
+    <BookPageTabs
+      eventId={event.id}
+      eventName={event.name}
+      venueName={event.venueName}
+      startAt={event.startAt.toISOString()}
+      tables={tables}
+    />
   );
 }
