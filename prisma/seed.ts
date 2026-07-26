@@ -46,22 +46,24 @@ async function main() {
   // Tiers: VVIP (the large circles marked "VIP" on the floor plan — the
   // booth + lounge on Floor 1, the lounge on Floor 2), capacity 8,
   // ฿15,000/table, 2x Black Label + mixers.
-  // VIP (every plain round table on the floor plan), capacity 4,
+  // VIP (the plain round tables on Floor 2, labeled "VIP 1"-"VIP 5"),
+  // capacity 4, ฿5,000/table, 1x Black Label.
+  // Regular (the plain numbered tables 1-16 on Floor 1), capacity 4,
   // ฿5,000/table, 1x Black Label.
 
-  const floor1VipFields = {
+  const floor1RegularFields = {
     eventId: event.id,
-    name: "Floor 1 — VIP",
+    name: "Floor 1 — Regular",
     type: "VIP_TABLE" as const,
     description: "1x Black Label, Main floor access, All stages",
     priceSatang: 500000, // 5,000 THB
     totalCapacity: 16,
     sortOrder: 0,
   };
-  const floor1Vip = await prisma.zone.upsert({
+  const floor1Regular = await prisma.zone.upsert({
     where: { id: "seed-floor1-vip-tables" },
-    update: floor1VipFields,
-    create: { id: "seed-floor1-vip-tables", ...floor1VipFields },
+    update: floor1RegularFields,
+    create: { id: "seed-floor1-vip-tables", ...floor1RegularFields },
   });
 
   const floor1VvipFields = {
@@ -126,22 +128,22 @@ async function main() {
   // VIP 1–5, VVIP3 on Floor 2).
   const tables: SeedTable[] = [
     // Floor 1 — 16 VIP tables (plain numbered circles)
-    { id: "seed-t-f1-01", zoneId: floor1Vip.id, label: "1", capacity: 4, priceSatang: null, floor: 1, positionXPct: 87.06, positionYPct: 31.14 },
-    { id: "seed-t-f1-02", zoneId: floor1Vip.id, label: "2", capacity: 4, priceSatang: null, floor: 1, positionXPct: 87.06, positionYPct: 42.23 },
-    { id: "seed-t-f1-03", zoneId: floor1Vip.id, label: "3", capacity: 4, priceSatang: null, floor: 1, positionXPct: 77.94, positionYPct: 18.61 },
-    { id: "seed-t-f1-04", zoneId: floor1Vip.id, label: "4", capacity: 4, priceSatang: null, floor: 1, positionXPct: 77.94, positionYPct: 31.39 },
-    { id: "seed-t-f1-05", zoneId: floor1Vip.id, label: "5", capacity: 4, priceSatang: null, floor: 1, positionXPct: 77.94, positionYPct: 42.23 },
-    { id: "seed-t-f1-06", zoneId: floor1Vip.id, label: "6", capacity: 4, priceSatang: null, floor: 1, positionXPct: 68.82, positionYPct: 18.73 },
-    { id: "seed-t-f1-07", zoneId: floor1Vip.id, label: "7", capacity: 4, priceSatang: null, floor: 1, positionXPct: 68.82, positionYPct: 31.14 },
-    { id: "seed-t-f1-08", zoneId: floor1Vip.id, label: "8", capacity: 4, priceSatang: null, floor: 1, positionXPct: 58.11, positionYPct: 18.98 },
-    { id: "seed-t-f1-09", zoneId: floor1Vip.id, label: "9", capacity: 4, priceSatang: null, floor: 1, positionXPct: 58.38, positionYPct: 31.14 },
-    { id: "seed-t-f1-10", zoneId: floor1Vip.id, label: "10", capacity: 4, priceSatang: null, floor: 1, positionXPct: 48.03, positionYPct: 18.61 },
-    { id: "seed-t-f1-11", zoneId: floor1Vip.id, label: "11", capacity: 4, priceSatang: null, floor: 1, positionXPct: 48.38, positionYPct: 31.14 },
-    { id: "seed-t-f1-12", zoneId: floor1Vip.id, label: "12", capacity: 4, priceSatang: null, floor: 1, positionXPct: 38.03, positionYPct: 18.61 },
-    { id: "seed-t-f1-13", zoneId: floor1Vip.id, label: "13", capacity: 4, priceSatang: null, floor: 1, positionXPct: 26.97, positionYPct: 18.61 },
-    { id: "seed-t-f1-14", zoneId: floor1Vip.id, label: "14", capacity: 4, priceSatang: null, floor: 1, positionXPct: 15.83, positionYPct: 18.61 },
-    { id: "seed-t-f1-15", zoneId: floor1Vip.id, label: "15", capacity: 4, priceSatang: null, floor: 1, positionXPct: 15.79, positionYPct: 31.99 },
-    { id: "seed-t-f1-16", zoneId: floor1Vip.id, label: "16", capacity: 4, priceSatang: null, floor: 1, positionXPct: 15.83, positionYPct: 44.7 },
+    { id: "seed-t-f1-01", zoneId: floor1Regular.id, label: "1", capacity: 4, priceSatang: null, floor: 1, positionXPct: 87.06, positionYPct: 31.14 },
+    { id: "seed-t-f1-02", zoneId: floor1Regular.id, label: "2", capacity: 4, priceSatang: null, floor: 1, positionXPct: 87.06, positionYPct: 42.23 },
+    { id: "seed-t-f1-03", zoneId: floor1Regular.id, label: "3", capacity: 4, priceSatang: null, floor: 1, positionXPct: 77.94, positionYPct: 18.61 },
+    { id: "seed-t-f1-04", zoneId: floor1Regular.id, label: "4", capacity: 4, priceSatang: null, floor: 1, positionXPct: 77.94, positionYPct: 31.39 },
+    { id: "seed-t-f1-05", zoneId: floor1Regular.id, label: "5", capacity: 4, priceSatang: null, floor: 1, positionXPct: 77.94, positionYPct: 42.23 },
+    { id: "seed-t-f1-06", zoneId: floor1Regular.id, label: "6", capacity: 4, priceSatang: null, floor: 1, positionXPct: 68.82, positionYPct: 18.73 },
+    { id: "seed-t-f1-07", zoneId: floor1Regular.id, label: "7", capacity: 4, priceSatang: null, floor: 1, positionXPct: 68.82, positionYPct: 31.14 },
+    { id: "seed-t-f1-08", zoneId: floor1Regular.id, label: "8", capacity: 4, priceSatang: null, floor: 1, positionXPct: 58.11, positionYPct: 18.98 },
+    { id: "seed-t-f1-09", zoneId: floor1Regular.id, label: "9", capacity: 4, priceSatang: null, floor: 1, positionXPct: 58.38, positionYPct: 31.14 },
+    { id: "seed-t-f1-10", zoneId: floor1Regular.id, label: "10", capacity: 4, priceSatang: null, floor: 1, positionXPct: 48.03, positionYPct: 18.61 },
+    { id: "seed-t-f1-11", zoneId: floor1Regular.id, label: "11", capacity: 4, priceSatang: null, floor: 1, positionXPct: 48.38, positionYPct: 31.14 },
+    { id: "seed-t-f1-12", zoneId: floor1Regular.id, label: "12", capacity: 4, priceSatang: null, floor: 1, positionXPct: 38.03, positionYPct: 18.61 },
+    { id: "seed-t-f1-13", zoneId: floor1Regular.id, label: "13", capacity: 4, priceSatang: null, floor: 1, positionXPct: 26.97, positionYPct: 18.61 },
+    { id: "seed-t-f1-14", zoneId: floor1Regular.id, label: "14", capacity: 4, priceSatang: null, floor: 1, positionXPct: 15.83, positionYPct: 18.61 },
+    { id: "seed-t-f1-15", zoneId: floor1Regular.id, label: "15", capacity: 4, priceSatang: null, floor: 1, positionXPct: 15.79, positionYPct: 31.99 },
+    { id: "seed-t-f1-16", zoneId: floor1Regular.id, label: "16", capacity: 4, priceSatang: null, floor: 1, positionXPct: 15.83, positionYPct: 44.7 },
     // Floor 1 — VVIP1 (big lounge) + VVIP2 (booth)
     { id: "seed-t-f1-vvip2", zoneId: floor1Vvip.id, label: "VVIP2", capacity: 6, priceSatang: null, floor: 1, positionXPct: 32.54, positionYPct: 58.01 },
     { id: "seed-t-f1-vvip1", zoneId: floor1Vvip.id, label: "VVIP1", capacity: 8, priceSatang: null, floor: 1, positionXPct: 84.43, positionYPct: 68.49 },
@@ -202,7 +204,7 @@ async function main() {
 
   console.log(`Seeded event "${event.name}" (${event.slug})`);
   console.log(
-    `Zones: ${floor1Vip.name}, ${floor1Vvip.name}, ${floor2Vip.name}, ${floor2Vvip.name}`
+    `Zones: ${floor1Regular.name}, ${floor1Vvip.name}, ${floor2Vip.name}, ${floor2Vvip.name}`
   );
   console.log(`Tables: ${tables.length}`);
   console.log(`Team admins: ${teamAdmins.map((a) => a.email).join(", ")}`);

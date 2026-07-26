@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createHoldSchema } from "@/lib/validators/booking";
 import { activeBookingItemFilter } from "@/lib/availability";
+import { expireStaleHolds } from "@/lib/expire-holds";
 import { recordAudit } from "@/lib/audit";
 
 const HOLD_TTL_MINUTES = 12;
@@ -60,6 +61,13 @@ export async function POST(request: Request) {
           if (table.isLocked) {
             throw new HoldConflictError(`${table.label} is currently locked by staff.`);
           }
+
+          // Flip any stale hold on this table to EXPIRED now, rather than waiting
+          // on the cron sweep - the partial unique index below enforces isActive
+          // at the row level, so a lapsed hold still blocks a new INSERT until its
+          // row is actually flipped, even though it's already excluded from
+          // availability reads.
+          await expireStaleHolds(tx, { items: { some: { tableId: table.id } } }, now);
 
           const alreadyBooked = await tx.bookingItem.findFirst({
             where: { ...activeFilter, tableId: table.id },

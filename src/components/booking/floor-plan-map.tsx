@@ -24,6 +24,39 @@ function tableRadius(capacity: number, floor: 1 | 2) {
   return 88;
 }
 
+// VVIP tables sit in a booth/lounge on the floor plan, not just their own
+// circle - the click target (and its decoration) should cover that whole
+// room, not just the small marker. Traced from the same wall/furniture
+// coordinates as FLOOR_LAYOUTS (see venue-map.ts) rather than an auto-sized
+// box, since these rooms are cut by diagonal walls, not plain rectangles.
+const VVIP_ZONE_POLYGONS: Record<string, { x: number; y: number }[]> = {
+  // Floor 1, VVIP2 - the plain rectangular booth (matches the furniture rect
+  // at x:235.5 y:403.5 w:270 h:156 in venue-map.ts exactly).
+  "1:VVIP2": [
+    { x: 235.5, y: 403.5 },
+    { x: 505.5, y: 403.5 },
+    { x: 505.5, y: 559.5 },
+    { x: 235.5, y: 559.5 },
+  ],
+  // Floor 1, VVIP1 - the corner lounge, chamfered by the diagonal wall
+  // running from (807.5,569) up to (~888.7,430.6) up to (1143.63,399.5).
+  "1:VVIP1": [
+    { x: 807.5, y: 768 },
+    { x: 807.5, y: 569 },
+    { x: 888.7, y: 430.6 },
+    { x: 1140, y: 400 },
+    { x: 1140, y: 768 },
+  ],
+  // Floor 2, VVIP3 - the top-right corner lounge, chamfered by the diagonal
+  // wall running from (1087.37,0) down to (842.37,273.33).
+  "2:VVIP3": [
+    { x: 1087.4, y: 0 },
+    { x: 842.4, y: 273.3 },
+    { x: 1161, y: 273.5 },
+    { x: 1161, y: 0 },
+  ],
+};
+
 export function FloorPlanMap({
   floor,
   tables,
@@ -39,6 +72,7 @@ export function FloorPlanMap({
 }) {
   const layout = FLOOR_LAYOUTS[floor];
   const otherFloor = floor === 1 ? 2 : 1;
+  const floorPlateFill = "oklch(0.09 0 0)";
 
   return (
     <svg
@@ -46,7 +80,7 @@ export function FloorPlanMap({
       className="h-auto w-full select-none rounded-lg border border-white/10 bg-neutral-950"
       style={{ aspectRatio: layout.width / layout.height }}
     >
-      <rect x={0} y={0} width={layout.width} height={layout.height} fill="oklch(0.09 0 0)" />
+      <rect x={0} y={0} width={layout.width} height={layout.height} fill={floorPlateFill} />
 
       {layout.walls.map((w, i) => (
         <line
@@ -78,7 +112,7 @@ export function FloorPlanMap({
             width={r.width}
             height={r.height}
             transform={r.transform}
-            fill={r.void ? "oklch(0.09 0 0)" : r.label ? "oklch(1 0 0 / 10%)" : "oklch(1 0 0 / 4%)"}
+            fill={r.void ? floorPlateFill : r.label ? "oklch(1 0 0 / 10%)" : "oklch(1 0 0 / 4%)"}
             stroke={r.void ? "none" : "oklch(1 0 0 / 15%)"}
             strokeWidth={1.5}
           />
@@ -163,6 +197,20 @@ export function FloorPlanMap({
             onClick={() => !t.isBooked && onSelect(t)}
             style={{ cursor: t.isBooked ? "not-allowed" : "pointer" }}
           >
+            {t.isPremium &&
+              (() => {
+                const polygon = VVIP_ZONE_POLYGONS[`${floor}:${t.label}`];
+                if (!polygon) return null;
+                return (
+                  <polygon
+                    points={polygon.map((p) => `${p.x},${p.y}`).join(" ")}
+                    fill={fill}
+                    stroke={stroke}
+                    strokeWidth={isSelected ? 4 : 2}
+                    strokeLinejoin="round"
+                  />
+                );
+              })()}
             <circle
               cx={cx}
               cy={cy}
