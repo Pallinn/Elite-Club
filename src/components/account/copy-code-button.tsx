@@ -18,7 +18,7 @@ export function CopyCodeButton({ code }: { code: string }) {
       variant="outline"
       size="sm"
       onClick={onCopy}
-      className="border-primary/40 font-mono text-xs uppercase tracking-[0.15em] text-primary"
+      className="h-11 border-primary/40 font-mono text-xs uppercase tracking-[0.15em] text-primary sm:h-7"
     >
       {copied ? "Copied!" : "Copy code"}
     </Button>

@@ -26,7 +26,7 @@ export function BookPageTabs({
       <div className="inline-flex rounded-full border border-white/10 bg-neutral-900 p-1.5">
         <button
           onClick={() => setTab("buy")}
-          className={`rounded-full px-6 py-2.5 font-mono text-xs uppercase tracking-[0.15em] transition-colors ${
+          className={`rounded-full px-3 py-2 font-mono text-[10px] uppercase tracking-[0.05em] transition-colors sm:px-6 sm:py-2.5 sm:text-xs sm:tracking-[0.15em] ${
             tab === "buy" ? "bg-primary text-white" : "text-neutral-400 hover:text-white"
           }`}
         >
@@ -34,7 +34,7 @@ export function BookPageTabs({
         </button>
         <button
           onClick={() => setTab("join")}
-          className={`rounded-full px-6 py-2.5 font-mono text-xs uppercase tracking-[0.15em] transition-colors ${
+          className={`rounded-full px-3 py-2 font-mono text-[10px] uppercase tracking-[0.05em] transition-colors sm:px-6 sm:py-2.5 sm:text-xs sm:tracking-[0.15em] ${
             tab === "join" ? "bg-primary text-white" : "text-neutral-400 hover:text-white"
           }`}
         >

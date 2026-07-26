@@ -20,7 +20,7 @@ export function ResendTicketsButton({ bookingId }: { bookingId: string }) {
   }
 
   return (
-    <Button variant="outline" size="sm" onClick={resend} disabled={loading}>
+    <Button variant="outline" size="sm" className="h-11 sm:h-7" onClick={resend} disabled={loading}>
       {loading ? "Sending..." : "Resend tickets by email"}
     </Button>
   );
