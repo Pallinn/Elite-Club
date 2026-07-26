@@ -48,10 +48,6 @@ export function LineupSection() {
                   {artist.name}
                 </span>
               </div>
-
-              <p className="absolute bottom-4 inset-x-0 z-10 text-center font-mono text-xs font-bold uppercase tracking-[0.15em] text-white">
-                {artist.time}
-              </p>
             </div>
           );
         })}

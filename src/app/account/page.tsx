@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ProfileForm } from "@/components/account/profile-form";
 import { SignOutButton } from "@/components/sign-out-button";
+import Link from "next/link";
 
 export default async function AccountPage() {
   const session = await auth();

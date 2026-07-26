@@ -3,6 +3,8 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createHoldSchema } from "@/lib/validators/booking";
 import { activeBookingItemFilter } from "@/lib/availability";
+import { expireStaleHolds } from "@/lib/expire-holds";
+import { recordAudit } from "@/lib/audit";
 
 const HOLD_TTL_MINUTES = 12;
 
@@ -56,6 +58,16 @@ export async function POST(request: Request) {
           if (!table || table.zoneId !== zone.id || !table.isActive) {
             throw new HoldConflictError("That table is no longer available.");
           }
+          if (table.isLocked) {
+            throw new HoldConflictError(`${table.label} is currently locked by staff.`);
+          }
+
+          // Flip any stale hold on this table to EXPIRED now, rather than waiting
+          // on the cron sweep - the partial unique index below enforces isActive
+          // at the row level, so a lapsed hold still blocks a new INSERT until its
+          // row is actually flipped, even though it's already excluded from
+          // availability reads.
+          await expireStaleHolds(tx, { items: { some: { tableId: table.id } } }, now);
 
           const alreadyBooked = await tx.bookingItem.findFirst({
             where: { ...activeFilter, tableId: table.id },
@@ -116,10 +128,23 @@ export async function POST(request: Request) {
         },
       });
 
-      return { bookingId: booking.id, holdExpiresAt };
+      return { bookingId: booking.id, holdExpiresAt, totalSatang, itemCount: itemsToCreate.length };
     });
 
-    return NextResponse.json(result);
+    await recordAudit({
+      actorUserId: session.user.id,
+      actorLabel: session.user.name ?? session.user.email ?? null,
+      action: "booking.created",
+      entityType: "Booking",
+      entityId: result.bookingId,
+      metadata: {
+        totalSatang: result.totalSatang,
+        itemCount: result.itemCount,
+        holdExpiresAt: result.holdExpiresAt.toISOString(),
+      },
+    });
+
+    return NextResponse.json({ bookingId: result.bookingId, holdExpiresAt: result.holdExpiresAt });
   } catch (err) {
     if (err instanceof HoldConflictError) {
       return NextResponse.json({ error: err.message }, { status: 409 });

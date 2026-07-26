@@ -1,11 +1,13 @@
-import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getEventAvailability } from "@/lib/availability";
 import { formatSatang } from "@/lib/money";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 
 export const dynamic = "force-dynamic";
+
+function tierOf(zoneName: string): "VVIP" | "Normal" {
+  return /vvip/i.test(zoneName) ? "VVIP" : "Normal";
+}
 
 export default async function AdminOverviewPage() {
   const event = await prisma.event.findFirst();
@@ -13,91 +15,126 @@ export default async function AdminOverviewPage() {
     return <p className="text-neutral-400">No event configured yet.</p>;
   }
 
-  const [revenue, ticketCount, recentBookings, zones] = await Promise.all([
+  const [revenueAgg, ticketCount, zones] = await Promise.all([
     prisma.booking.aggregate({
       where: { eventId: event.id, status: "PAID" },
       _sum: { totalSatang: true },
     }),
-    prisma.ticket.count({ where: { bookingItem: { booking: { eventId: event.id, status: "PAID" } } } }),
-    prisma.booking.findMany({
-      where: { eventId: event.id },
-      orderBy: { createdAt: "desc" },
-      take: 10,
-      include: { items: { include: { zone: true, table: true } }, user: true },
+    prisma.ticket.count({
+      where: { bookingItem: { booking: { eventId: event.id, status: "PAID" } } },
     }),
     getEventAvailability(event.id),
   ]);
 
+  const revenue = revenueAgg._sum.totalSatang ?? 0;
+
+  // Aggregate by tier from zone name.
+  const byTier: Record<"VVIP" | "Normal", { total: number; sold: number }> = {
+    VVIP: { total: 0, sold: 0 },
+    Normal: { total: 0, sold: 0 },
+  };
+  for (const zone of zones) {
+    const tier = tierOf(zone.name);
+    for (const table of zone.tables) {
+      byTier[tier].total += 1;
+      if (table.isBooked) byTier[tier].sold += 1;
+    }
+  }
+  const overall = {
+    total: byTier.VVIP.total + byTier.Normal.total,
+    sold: byTier.VVIP.sold + byTier.Normal.sold,
+  };
+
+  const cards: { title: string; sold: number; total: number; accent: string }[] = [
+    { title: "VVIP", sold: byTier.VVIP.sold, total: byTier.VVIP.total, accent: "text-orange-500" },
+    { title: "Normal", sold: byTier.Normal.sold, total: byTier.Normal.total, accent: "text-amber-300" },
+    { title: "Overall", sold: overall.sold, total: overall.total, accent: "text-white" },
+  ];
+
   return (
     <div className="space-y-8">
+      <div>
+        <p className="font-mono text-xs uppercase tracking-[0.3em] text-orange-500">// Overview</p>
+        <h1 className="mt-2 font-heading text-3xl font-bold text-white">
+          {event.name}
+        </h1>
+        <p className="mt-1 text-sm text-neutral-500">{event.venueName} — Admin Dashboard</p>
+      </div>
+
+      {/* Revenue + counts row */}
       <div className="grid gap-4 sm:grid-cols-3">
         <Card className="border-white/10 bg-neutral-950">
           <CardHeader>
-            <CardTitle className="text-sm text-neutral-400">Revenue</CardTitle>
+            <CardTitle className="font-mono text-xs uppercase tracking-[0.15em] text-neutral-500">
+              Revenue
+            </CardTitle>
           </CardHeader>
-          <CardContent className="text-2xl text-white">
-            {formatSatang(revenue._sum.totalSatang ?? 0)}
+          <CardContent className="font-heading text-3xl font-bold text-orange-500">
+            {formatSatang(revenue)}
           </CardContent>
         </Card>
         <Card className="border-white/10 bg-neutral-950">
           <CardHeader>
-            <CardTitle className="text-sm text-neutral-400">Tickets sold</CardTitle>
+            <CardTitle className="font-mono text-xs uppercase tracking-[0.15em] text-neutral-500">
+              Tickets issued
+            </CardTitle>
           </CardHeader>
-          <CardContent className="text-2xl text-white">{ticketCount}</CardContent>
+          <CardContent className="font-heading text-3xl font-bold text-white">
+            {ticketCount}
+          </CardContent>
         </Card>
         <Card className="border-white/10 bg-neutral-950">
           <CardHeader>
-            <CardTitle className="text-sm text-neutral-400">Event</CardTitle>
+            <CardTitle className="font-mono text-xs uppercase tracking-[0.15em] text-neutral-500">
+              Occupancy
+            </CardTitle>
           </CardHeader>
-          <CardContent className="text-lg text-white">{event.name}</CardContent>
+          <CardContent className="font-heading text-3xl font-bold text-white">
+            {overall.total > 0 ? Math.round((overall.sold / overall.total) * 100) : 0}%
+          </CardContent>
         </Card>
       </div>
 
+      {/* Tier breakdown */}
       <div>
-        <h2 className="mb-3 text-lg font-semibold text-white">Remaining capacity</h2>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {zones.map((zone) => (
-            <Card key={zone.id} className="border-white/10 bg-neutral-950">
-              <CardContent className="flex justify-between text-sm">
-                <span className="text-neutral-300">{zone.name}</span>
-                <span className="text-white">
-                  {zone.type === "GENERAL_ADMISSION"
-                    ? `${zone.available} / ${zone.totalCapacity} left`
-                    : `${zone.tables.filter((t) => !t.isBooked).length} / ${zone.tables.length} tables left`}
-                </span>
+        <h2 className="mb-3 font-mono text-xs uppercase tracking-[0.15em] text-neutral-500">
+          Tables by tier
+        </h2>
+        <div className="grid gap-4 sm:grid-cols-3">
+          {cards.map((c) => (
+            <Card key={c.title} className="border-white/10 bg-neutral-950">
+              <CardHeader>
+                <CardTitle className={`font-heading text-xl font-bold ${c.accent}`}>
+                  {c.title}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="flex items-baseline justify-between">
+                  <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-neutral-500">
+                    Sold
+                  </span>
+                  <span className="text-lg text-white">{c.sold}</span>
+                </div>
+                <div className="flex items-baseline justify-between">
+                  <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-neutral-500">
+                    Available
+                  </span>
+                  <span className="text-lg text-white">{c.total - c.sold}</span>
+                </div>
+                <div className="flex items-baseline justify-between border-t border-white/10 pt-2">
+                  <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-neutral-500">
+                    Capacity
+                  </span>
+                  <span className="text-lg text-neutral-400">{c.total}</span>
+                </div>
+                <div className="h-1 w-full overflow-hidden rounded bg-white/10">
+                  <div
+                    className={`h-1 ${c.title === "VVIP" ? "bg-orange-500" : c.title === "Normal" ? "bg-amber-300" : "bg-white"}`}
+                    style={{ width: c.total > 0 ? `${(c.sold / c.total) * 100}%` : "0%" }}
+                  />
+                </div>
               </CardContent>
             </Card>
-          ))}
-        </div>
-      </div>
-
-      <div>
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-white">Recent bookings</h2>
-          <Link href="/admin/bookings" className="text-sm text-neutral-400 hover:text-white">
-            View all
-          </Link>
-        </div>
-        <div className="space-y-2">
-          {recentBookings.map((booking) => (
-            <Link
-              key={booking.id}
-              href={`/admin/bookings/${booking.id}`}
-              className="flex items-center justify-between rounded-lg border border-white/10 bg-neutral-950 p-3 text-sm hover:border-white/30"
-            >
-              <div>
-                <p className="text-white">{booking.contactName || booking.user.name}</p>
-                <p className="text-neutral-500">
-                  {booking.items.map((i) => i.table?.label ?? `${i.zone.name} x${i.quantity}`).join(", ")}
-                </p>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-white">{formatSatang(booking.totalSatang)}</span>
-                <Badge variant={booking.status === "PAID" ? "default" : "secondary"}>
-                  {booking.status}
-                </Badge>
-              </div>
-            </Link>
           ))}
         </div>
       </div>

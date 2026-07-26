@@ -25,32 +25,45 @@ async function main() {
     create: { slug: "no-signal", ...eventFields },
   });
 
-  // Retired: standing-room General Admission is no longer sold for this event —
-  // every seat is now an individually bookable table on the floor-plan map.
-  const retiredZoneIds = ["seed-ga-early-bird", "seed-ga-regular", "seed-vip-tables"];
+  // Retired: standing-room General Admission, and the old 5-zone/25-table
+  // layout, are no longer sold — replaced by the exact table-per-table Figma
+  // floor plan (16+2 tables on Floor 1, 5+1 on Floor 2).
+  const retiredZoneIds = [
+    "seed-ga-early-bird",
+    "seed-ga-regular",
+    "seed-vip-tables",
+    "seed-floor1-regular",
+    "seed-floor1-premium",
+    "seed-floor1-vip",
+    "seed-floor2-regular",
+    "seed-floor2-premium",
+  ];
   await prisma.booking.deleteMany({
     where: { items: { some: { zoneId: { in: retiredZoneIds } } } },
   });
   await prisma.zone.deleteMany({ where: { id: { in: retiredZoneIds } } });
 
-  // Tiers: VVIP (8-14 people, ฿15,000-20,000/table, 2x Black Label + mixers),
-  // VIP (4-8 people, ฿7,000-11,000/table, 1x Black Label + mixers),
-  // Stand Table (฿5,000/table, 1x Black Label). Each specific table is priced
-  // within its tier's range based on its own capacity.
+  // Tiers: VVIP (the large circles marked "VIP" on the floor plan — the
+  // booth + lounge on Floor 1, the lounge on Floor 2), capacity 8,
+  // ฿15,000/table, 2x Black Label + mixers.
+  // VIP (the plain round tables on Floor 2, labeled "VIP 1"-"VIP 5"),
+  // capacity 4, ฿5,000/table, 1x Black Label.
+  // Regular (the plain numbered tables 1-16 on Floor 1), capacity 4,
+  // ฿5,000/table, 1x Black Label.
 
-  const floor1StandFields = {
+  const floor1RegularFields = {
     eventId: event.id,
-    name: "Floor 1 — Stand Table",
+    name: "Floor 1 — Regular",
     type: "VIP_TABLE" as const,
     description: "1x Black Label, Main floor access, All stages",
-    priceSatang: 500000, // 5000 THB
-    totalCapacity: 12,
+    priceSatang: 500000, // 5,000 THB
+    totalCapacity: 16,
     sortOrder: 0,
   };
-  const floor1Stand = await prisma.zone.upsert({
-    where: { id: "seed-floor1-regular" },
-    update: floor1StandFields,
-    create: { id: "seed-floor1-regular", ...floor1StandFields },
+  const floor1Regular = await prisma.zone.upsert({
+    where: { id: "seed-floor1-vip-tables" },
+    update: floor1RegularFields,
+    create: { id: "seed-floor1-vip-tables", ...floor1RegularFields },
   });
 
   const floor1VvipFields = {
@@ -58,44 +71,29 @@ async function main() {
     name: "Floor 1 — VVIP",
     type: "VIP_TABLE" as const,
     description: "2x Black Label, Mixers, Priority entry, Dedicated server",
-    priceSatang: 1500000, // 15,000 THB base
-    totalCapacity: 1,
+    priceSatang: 1500000, // 15,000 THB
+    totalCapacity: 2,
     sortOrder: 1,
   };
   const floor1Vvip = await prisma.zone.upsert({
-    where: { id: "seed-floor1-premium" },
+    where: { id: "seed-floor1-vvip" },
     update: floor1VvipFields,
-    create: { id: "seed-floor1-premium", ...floor1VvipFields },
+    create: { id: "seed-floor1-vvip", ...floor1VvipFields },
   });
 
-  const floor1VipFields = {
+  const floor2VipFields = {
     eventId: event.id,
-    name: "Floor 1 — VIP",
+    name: "Floor 2 — VIP",
     type: "VIP_TABLE" as const,
-    description: "1x Black Label, Mixers, Priority entry, Dedicated server",
-    priceSatang: 900000, // 9,000 THB base
-    totalCapacity: 1,
+    description: "1x Black Label, Main floor access, All stages",
+    priceSatang: 500000, // 5,000 THB
+    totalCapacity: 5,
     sortOrder: 2,
   };
-  const floor1Vip = await prisma.zone.upsert({
-    where: { id: "seed-floor1-vip" },
-    update: floor1VipFields,
-    create: { id: "seed-floor1-vip", ...floor1VipFields },
-  });
-
-  const floor2StandFields = {
-    eventId: event.id,
-    name: "Floor 2 — Stand Table",
-    type: "VIP_TABLE" as const,
-    description: "1x Black Label, Upper floor access, Bar view",
-    priceSatang: 500000, // 5000 THB
-    totalCapacity: 10,
-    sortOrder: 3,
-  };
-  const floor2Stand = await prisma.zone.upsert({
-    where: { id: "seed-floor2-regular" },
-    update: floor2StandFields,
-    create: { id: "seed-floor2-regular", ...floor2StandFields },
+  const floor2Vip = await prisma.zone.upsert({
+    where: { id: "seed-floor2-vip-tables" },
+    update: floor2VipFields,
+    create: { id: "seed-floor2-vip-tables", ...floor2VipFields },
   });
 
   const floor2VvipFields = {
@@ -103,14 +101,14 @@ async function main() {
     name: "Floor 2 — VVIP",
     type: "VIP_TABLE" as const,
     description: "2x Black Label, Mixers, Priority entry, Dedicated server",
-    priceSatang: 1500000, // 15,000 THB base
+    priceSatang: 1500000, // 15,000 THB
     totalCapacity: 1,
-    sortOrder: 4,
+    sortOrder: 3,
   };
   const floor2Vvip = await prisma.zone.upsert({
-    where: { id: "seed-floor2-premium" },
+    where: { id: "seed-floor2-vvip" },
     update: floor2VvipFields,
-    create: { id: "seed-floor2-premium", ...floor2VvipFields },
+    create: { id: "seed-floor2-vvip", ...floor2VvipFields },
   });
 
   type SeedTable = {
@@ -124,37 +122,39 @@ async function main() {
     positionYPct: number;
   };
 
+  // Positions traced pixel-for-pixel from the Figma floor-plan SVGs
+  // (Floor 1 = 1140x830, Floor 2 = 1161x828), matching the exact table
+  // numbers/labels drawn on the plan (1–16, VVIP1, VVIP2 on Floor 1;
+  // VIP 1–5, VVIP3 on Floor 2).
   const tables: SeedTable[] = [
-    // Floor 1 — 12 stand tables
-    { id: "seed-t-f1-01", zoneId: floor1Stand.id, label: "Table 1", capacity: 4, priceSatang: null, floor: 1, positionXPct: 18, positionYPct: 22 },
-    { id: "seed-t-f1-02", zoneId: floor1Stand.id, label: "Table 2", capacity: 4, priceSatang: null, floor: 1, positionXPct: 32, positionYPct: 22 },
-    { id: "seed-t-f1-03", zoneId: floor1Stand.id, label: "Table 3", capacity: 4, priceSatang: null, floor: 1, positionXPct: 46, positionYPct: 22 },
-    { id: "seed-t-f1-04", zoneId: floor1Stand.id, label: "Table 4", capacity: 4, priceSatang: null, floor: 1, positionXPct: 60, positionYPct: 22 },
-    { id: "seed-t-f1-05", zoneId: floor1Stand.id, label: "Table 5", capacity: 4, priceSatang: null, floor: 1, positionXPct: 74, positionYPct: 22 },
-    { id: "seed-t-f1-06", zoneId: floor1Stand.id, label: "Table 6", capacity: 4, priceSatang: null, floor: 1, positionXPct: 18, positionYPct: 42 },
-    { id: "seed-t-f1-07", zoneId: floor1Stand.id, label: "Table 7", capacity: 4, priceSatang: null, floor: 1, positionXPct: 60, positionYPct: 42 },
-    { id: "seed-t-f1-08", zoneId: floor1Stand.id, label: "Table 8", capacity: 4, priceSatang: null, floor: 1, positionXPct: 74, positionYPct: 42 },
-    { id: "seed-t-f1-09", zoneId: floor1Stand.id, label: "Table 9", capacity: 4, priceSatang: null, floor: 1, positionXPct: 84, positionYPct: 58 },
-    { id: "seed-t-f1-10", zoneId: floor1Stand.id, label: "Table 10", capacity: 4, priceSatang: null, floor: 1, positionXPct: 70, positionYPct: 58 },
-    { id: "seed-t-f1-11", zoneId: floor1Stand.id, label: "Table 11", capacity: 4, priceSatang: null, floor: 1, positionXPct: 84, positionYPct: 75 },
-    { id: "seed-t-f1-12", zoneId: floor1Stand.id, label: "Table 12", capacity: 4, priceSatang: null, floor: 1, positionXPct: 70, positionYPct: 75 },
-    // Floor 1 — VVIP (V1, capacity 8 -> priced at the bottom of the 15k-20k range)
-    { id: "seed-t-f1-v1", zoneId: floor1Vvip.id, label: "V1 Lounge", capacity: 8, priceSatang: 1500000, floor: 1, positionXPct: 38, positionYPct: 52 },
-    // Floor 1 — VIP (V2, capacity 6 -> mid-way through the 7k-11k range)
-    { id: "seed-t-f1-v2", zoneId: floor1Vip.id, label: "V2 Booth", capacity: 6, priceSatang: 900000, floor: 1, positionXPct: 90, positionYPct: 68 },
-    // Floor 2 — 10 stand tables
-    { id: "seed-t-f2-01", zoneId: floor2Stand.id, label: "Table 13", capacity: 4, priceSatang: null, floor: 2, positionXPct: 78, positionYPct: 15 },
-    { id: "seed-t-f2-02", zoneId: floor2Stand.id, label: "Table 14", capacity: 4, priceSatang: null, floor: 2, positionXPct: 88, positionYPct: 15 },
-    { id: "seed-t-f2-03", zoneId: floor2Stand.id, label: "Table 15", capacity: 4, priceSatang: null, floor: 2, positionXPct: 78, positionYPct: 28 },
-    { id: "seed-t-f2-04", zoneId: floor2Stand.id, label: "Table 16", capacity: 4, priceSatang: null, floor: 2, positionXPct: 88, positionYPct: 28 },
-    { id: "seed-t-f2-05", zoneId: floor2Stand.id, label: "Table 17", capacity: 4, priceSatang: null, floor: 2, positionXPct: 68, positionYPct: 22 },
-    { id: "seed-t-f2-06", zoneId: floor2Stand.id, label: "Table 18", capacity: 4, priceSatang: null, floor: 2, positionXPct: 60, positionYPct: 30 },
-    { id: "seed-t-f2-07", zoneId: floor2Stand.id, label: "Table 19", capacity: 4, priceSatang: null, floor: 2, positionXPct: 53, positionYPct: 37 },
-    { id: "seed-t-f2-08", zoneId: floor2Stand.id, label: "Table 20", capacity: 4, priceSatang: null, floor: 2, positionXPct: 45, positionYPct: 45 },
-    { id: "seed-t-f2-09", zoneId: floor2Stand.id, label: "Table 21", capacity: 4, priceSatang: null, floor: 2, positionXPct: 36, positionYPct: 52 },
-    { id: "seed-t-f2-10", zoneId: floor2Stand.id, label: "Table 22", capacity: 4, priceSatang: null, floor: 2, positionXPct: 28, positionYPct: 60 },
-    // Floor 2 — VVIP (Lounge, capacity 8 -> priced at the bottom of the 15k-20k range)
-    { id: "seed-t-f2-lounge", zoneId: floor2Vvip.id, label: "Floor 2 Lounge", capacity: 8, priceSatang: 1500000, floor: 2, positionXPct: 15, positionYPct: 78 },
+    // Floor 1 — 16 VIP tables (plain numbered circles)
+    { id: "seed-t-f1-01", zoneId: floor1Regular.id, label: "1", capacity: 4, priceSatang: null, floor: 1, positionXPct: 87.06, positionYPct: 31.14 },
+    { id: "seed-t-f1-02", zoneId: floor1Regular.id, label: "2", capacity: 4, priceSatang: null, floor: 1, positionXPct: 87.06, positionYPct: 42.23 },
+    { id: "seed-t-f1-03", zoneId: floor1Regular.id, label: "3", capacity: 4, priceSatang: null, floor: 1, positionXPct: 77.94, positionYPct: 18.61 },
+    { id: "seed-t-f1-04", zoneId: floor1Regular.id, label: "4", capacity: 4, priceSatang: null, floor: 1, positionXPct: 77.94, positionYPct: 31.39 },
+    { id: "seed-t-f1-05", zoneId: floor1Regular.id, label: "5", capacity: 4, priceSatang: null, floor: 1, positionXPct: 77.94, positionYPct: 42.23 },
+    { id: "seed-t-f1-06", zoneId: floor1Regular.id, label: "6", capacity: 4, priceSatang: null, floor: 1, positionXPct: 68.82, positionYPct: 18.73 },
+    { id: "seed-t-f1-07", zoneId: floor1Regular.id, label: "7", capacity: 4, priceSatang: null, floor: 1, positionXPct: 68.82, positionYPct: 31.14 },
+    { id: "seed-t-f1-08", zoneId: floor1Regular.id, label: "8", capacity: 4, priceSatang: null, floor: 1, positionXPct: 58.11, positionYPct: 18.98 },
+    { id: "seed-t-f1-09", zoneId: floor1Regular.id, label: "9", capacity: 4, priceSatang: null, floor: 1, positionXPct: 58.38, positionYPct: 31.14 },
+    { id: "seed-t-f1-10", zoneId: floor1Regular.id, label: "10", capacity: 4, priceSatang: null, floor: 1, positionXPct: 48.03, positionYPct: 18.61 },
+    { id: "seed-t-f1-11", zoneId: floor1Regular.id, label: "11", capacity: 4, priceSatang: null, floor: 1, positionXPct: 48.38, positionYPct: 31.14 },
+    { id: "seed-t-f1-12", zoneId: floor1Regular.id, label: "12", capacity: 4, priceSatang: null, floor: 1, positionXPct: 38.03, positionYPct: 18.61 },
+    { id: "seed-t-f1-13", zoneId: floor1Regular.id, label: "13", capacity: 4, priceSatang: null, floor: 1, positionXPct: 26.97, positionYPct: 18.61 },
+    { id: "seed-t-f1-14", zoneId: floor1Regular.id, label: "14", capacity: 4, priceSatang: null, floor: 1, positionXPct: 15.83, positionYPct: 18.61 },
+    { id: "seed-t-f1-15", zoneId: floor1Regular.id, label: "15", capacity: 4, priceSatang: null, floor: 1, positionXPct: 15.79, positionYPct: 31.99 },
+    { id: "seed-t-f1-16", zoneId: floor1Regular.id, label: "16", capacity: 4, priceSatang: null, floor: 1, positionXPct: 15.83, positionYPct: 44.7 },
+    // Floor 1 — VVIP1 (big lounge) + VVIP2 (booth)
+    { id: "seed-t-f1-vvip2", zoneId: floor1Vvip.id, label: "VVIP2", capacity: 6, priceSatang: null, floor: 1, positionXPct: 32.54, positionYPct: 58.01 },
+    { id: "seed-t-f1-vvip1", zoneId: floor1Vvip.id, label: "VVIP1", capacity: 8, priceSatang: null, floor: 1, positionXPct: 84.43, positionYPct: 68.49 },
+    // Floor 2 — 5 VIP tables (plain circles, "VIP N" labeled on the plan)
+    { id: "seed-t-f2-01", zoneId: floor2Vip.id, label: "VIP 1", capacity: 4, priceSatang: null, floor: 2, positionXPct: 14.34, positionYPct: 84.78 },
+    { id: "seed-t-f2-02", zoneId: floor2Vip.id, label: "VIP 2", capacity: 4, priceSatang: null, floor: 2, positionXPct: 33.38, positionYPct: 84.78 },
+    { id: "seed-t-f2-03", zoneId: floor2Vip.id, label: "VIP 3", capacity: 4, priceSatang: null, floor: 2, positionXPct: 51.81, positionYPct: 76.45 },
+    { id: "seed-t-f2-04", zoneId: floor2Vip.id, label: "VIP 4", capacity: 4, priceSatang: null, floor: 2, positionXPct: 69.29, positionYPct: 61.71 },
+    { id: "seed-t-f2-05", zoneId: floor2Vip.id, label: "VIP 5", capacity: 4, priceSatang: null, floor: 2, positionXPct: 85.23, positionYPct: 47.46 },
+    // Floor 2 — VVIP3 lounge
+    { id: "seed-t-f2-vvip3", zoneId: floor2Vvip.id, label: "VVIP3", capacity: 8, priceSatang: null, floor: 2, positionXPct: 92.03, positionYPct: 21.86 },
   ];
 
   for (const t of tables) {
@@ -162,24 +162,53 @@ async function main() {
     await prisma.table.upsert({ where: { id }, update: fields, create: { id, ...fields } });
   }
 
-  const adminPasswordHash = await bcrypt.hash("admin12345", 12);
-  const adminFields = {
-    name: "No Signal Admin",
-    passwordHash: adminPasswordHash,
-    role: "ADMIN" as const,
-  };
+  // Team-shared admin logins. All five accounts share the same password by
+  // design (per team ops); the username differentiates the audit trail.
+  const teamAdminPasswordHash = await bcrypt.hash("elite_q", 12);
+  const teamAdmins = [
+    { email: "elite_pan@elite.local", name: "Pan" },
+    { email: "elite_gong@elite.local", name: "Gong" },
+    { email: "elite_japam@elite.local", name: "Japam" },
+    { email: "elite_lin@elite.local", name: "Lin" },
+    { email: "elite_c@elite.local", name: "C" },
+  ];
+  for (const a of teamAdmins) {
+    const fields = {
+      name: a.name,
+      passwordHash: teamAdminPasswordHash,
+      role: "ADMIN" as const,
+    };
+    await prisma.user.upsert({
+      where: { email: a.email },
+      update: fields,
+      create: { email: a.email, ...fields },
+    });
+  }
+
+  // Original seeded fallback admin (kept for backwards compatibility).
+  const legacyAdminHash = await bcrypt.hash("admin12345", 12);
   await prisma.user.upsert({
     where: { email: "admin@no-signal.example" },
-    update: adminFields,
-    create: { email: "admin@no-signal.example", ...adminFields },
+    update: {
+      name: "No Signal Admin",
+      passwordHash: legacyAdminHash,
+      role: "ADMIN" as const,
+    },
+    create: {
+      email: "admin@no-signal.example",
+      name: "No Signal Admin",
+      passwordHash: legacyAdminHash,
+      role: "ADMIN" as const,
+    },
   });
 
   console.log(`Seeded event "${event.name}" (${event.slug})`);
   console.log(
-    `Zones: ${floor1Stand.name}, ${floor1Vvip.name}, ${floor1Vip.name}, ${floor2Stand.name}, ${floor2Vvip.name}`
+    `Zones: ${floor1Regular.name}, ${floor1Vvip.name}, ${floor2Vip.name}, ${floor2Vvip.name}`
   );
   console.log(`Tables: ${tables.length}`);
-  console.log("Admin login: admin@no-signal.example / admin12345");
+  console.log(`Team admins: ${teamAdmins.map((a) => a.email).join(", ")}`);
+  console.log("Password (all): elite_q");
 }
 
 main()

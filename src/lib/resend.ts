@@ -12,4 +12,4 @@ export function getResendClient(): Resend {
   return client;
 }
 
-export const EMAIL_FROM = process.env.RESEND_FROM_EMAIL ?? "No Signal <tickets@no-signal.example>";
+export const EMAIL_FROM = process.env.RESEND_FROM_EMAIL ?? "onboarding@resend.dev";

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { sendBookingTicketsEmail } from "@/lib/tickets";
+import { sendBookingPurchaseEmail } from "@/lib/tickets";
 
 export async function POST(
   _request: Request,
@@ -21,6 +21,15 @@ export async function POST(
     return NextResponse.json({ error: "This booking has no tickets to resend." }, { status: 400 });
   }
 
-  await sendBookingTicketsEmail(id, true);
+  try {
+    await sendBookingPurchaseEmail(id);
+  } catch (err) {
+    console.error(`Failed to resend tickets email for booking ${id}:`, err);
+    return NextResponse.json(
+      { error: "Couldn't send the email right now. Check the email provider is configured." },
+      { status: 502 }
+    );
+  }
+
   return NextResponse.json({ ok: true });
 }

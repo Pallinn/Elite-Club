@@ -1,14 +1,14 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { formatSatang } from "@/lib/money";
 
 type TierCard = {
   id: string;
   name: string;
-  tablesLabel: string;
-  capacity: number;
+  imageUrl: string | null;
+  benefits: string[];
   fromSatang: number;
-  drinks: string;
   soldOut: boolean;
 };
 
@@ -34,48 +34,46 @@ export function EventsSection({ tiers }: { tiers: TierCard[] }) {
           {tiers.map((tier) => (
             <div
               key={tier.id}
-              className="flex flex-col overflow-hidden rounded-lg border border-white/10 bg-black/60 p-6 backdrop-blur-sm transition-colors hover:border-amber-400/50"
+              className="flex flex-col overflow-hidden rounded-lg border border-white/10 bg-black/60 backdrop-blur-sm transition-colors hover:border-amber-400/50"
             >
-              <h3 className="font-heading text-2xl font-bold uppercase text-white">{tier.name}</h3>
+              <div className="relative flex aspect-video items-center justify-center border-b border-white/10 bg-white/5">
+                {tier.imageUrl ? (
+                  <Image src={tier.imageUrl} alt={tier.name} fill className="object-cover" />
+                ) : (
+                  <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-neutral-600">
+                    Image coming soon
+                  </span>
+                )}
+              </div>
 
-              <dl className="mt-5 space-y-3 border-t border-white/10 pt-5 text-sm">
-                <div className="flex justify-between gap-4">
-                  <dt className="shrink-0 font-mono text-[10px] uppercase tracking-[0.15em] text-neutral-500">
-                    Tables
-                  </dt>
-                  <dd className="text-right text-neutral-300">{tier.tablesLabel}</dd>
-                </div>
-                <div className="flex justify-between gap-4">
-                  <dt className="shrink-0 font-mono text-[10px] uppercase tracking-[0.15em] text-neutral-500">
-                    Capacity
-                  </dt>
-                  <dd className="text-neutral-300">{tier.capacity} people</dd>
-                </div>
-                <div className="flex justify-between gap-4">
-                  <dt className="shrink-0 font-mono text-[10px] uppercase tracking-[0.15em] text-neutral-500">
-                    Price
-                  </dt>
-                  <dd className="font-heading font-bold text-amber-400">
-                    {tier.soldOut ? "Sold out" : `${formatSatang(tier.fromSatang)} / table`}
-                  </dd>
-                </div>
-                <div className="flex justify-between gap-4">
-                  <dt className="shrink-0 font-mono text-[10px] uppercase tracking-[0.15em] text-neutral-500">
-                    Drinks
-                  </dt>
-                  <dd className="text-right text-neutral-300">{tier.drinks}</dd>
-                </div>
-              </dl>
+              <div className="flex flex-1 flex-col p-6">
+                <h3 className="font-heading text-2xl font-bold uppercase text-white">{tier.name}</h3>
 
-              <Button
-                variant="outline"
-                disabled={tier.soldOut}
-                className="border-amber-400 text-amber-400 hover:bg-amber-400 hover:text-black mt-6 font-mono text-xs uppercase tracking-[0.15em]"
-                nativeButton={false}
-                render={<Link href="/book" />}
-              >
-                Book now
-              </Button>
+                <p className="mt-2 font-heading font-bold text-amber-400">
+                  {tier.soldOut ? "Sold out" : `${formatSatang(tier.fromSatang)} / table`}
+                </p>
+
+                {tier.benefits.length > 0 && (
+                  <ul className="mt-5 space-y-2 border-t border-white/10 pt-5 text-sm text-neutral-300">
+                    {tier.benefits.map((benefit) => (
+                      <li key={benefit} className="flex items-start gap-2">
+                        <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-amber-400" />
+                        {benefit}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                <Button
+                  variant="outline"
+                  disabled={tier.soldOut}
+                  className="border-amber-400 text-amber-400 hover:bg-amber-400 hover:text-black mt-6 font-mono text-xs uppercase tracking-[0.15em]"
+                  nativeButton={false}
+                  render={<Link href="/book" />}
+                >
+                  Book now
+                </Button>
+              </div>
             </div>
           ))}
         </div>

@@ -22,7 +22,7 @@ export function OrderSummary({
         className="relative mt-4 flex h-32 items-center justify-center overflow-hidden rounded"
         style={{
           background:
-            "radial-gradient(120% 100% at 30% 0%, oklch(0.667 0.295 322.15 / 30%) 0%, oklch(0.09 0 0) 60%)",
+            "radial-gradient(120% 100% at 30% 0%, oklch(0.72 0.19 55 / 30%) 0%, oklch(0.09 0 0) 60%)",
         }}
       >
         <div className="absolute inset-0 bg-[linear-gradient(oklch(1_0_0/8%)_1px,transparent_1px),linear-gradient(90deg,oklch(1_0_0/8%)_1px,transparent_1px)] bg-[size:20px_20px]" />

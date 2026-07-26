@@ -39,25 +39,36 @@ export function FloorPlanBooking({
   }, [data, initialTables]);
 
   const [floor, setFloor] = useState<1 | 2>(1);
-  const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
   const { reserve, loading } = useReserve();
 
   const floorTables = tables.filter((t) => t.floor === floor);
-  const selected = tables.find((t) => t.key === selectedKey) ?? null;
+  const selectedTables = tables.filter((t) => selectedKeys.has(t.key));
+  const totalSatang = selectedTables.reduce((sum, t) => sum + t.priceSatang, 0);
 
   function handleSelect(table: FloorTable) {
-    setSelectedKey(table.key);
+    setSelectedKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(table.key)) {
+        next.delete(table.key);
+      } else {
+        next.add(table.key);
+      }
+      return next;
+    });
   }
 
   async function onContinue() {
-    if (!selected) return;
-    await reserve([{ zoneId: selected.zoneId, tableId: selected.tableId, quantity: 1 }]);
+    if (selectedTables.length === 0) return;
+    await reserve(
+      selectedTables.map((t) => ({ zoneId: t.zoneId, tableId: t.tableId, quantity: 1 }))
+    );
   }
 
   return (
     <div>
       <h1 className="font-heading text-2xl font-bold text-white sm:text-3xl">
-        Choose your table
+        Choose your tables
       </h1>
 
       <div className="mt-6 grid gap-8 lg:grid-cols-[1fr_320px]">
@@ -81,8 +92,9 @@ export function FloorPlanBooking({
           <FloorPlanMap
             floor={floor}
             tables={floorTables}
-            selectedKey={selectedKey}
+            selectedKeys={selectedKeys}
             onSelect={handleSelect}
+            onSwitchFloor={setFloor}
           />
 
           <div className="mt-4 flex flex-wrap gap-4 font-mono text-[10px] uppercase tracking-[0.15em] text-neutral-500">
@@ -104,29 +116,46 @@ export function FloorPlanBooking({
             </span>
           </div>
 
-          {selected && (
-            <div className="mt-6 rounded-lg border border-primary bg-primary/5 p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-heading text-base font-bold uppercase text-white">
-                    {selected.label}
-                  </p>
-                  <p className="text-sm text-neutral-400">Seats up to {selected.capacity}</p>
+          {selectedTables.length > 0 && (
+            <div className="mt-6 space-y-2">
+              {selectedTables.map((t) => (
+                <div
+                  key={t.key}
+                  className="flex items-center justify-between rounded-lg border border-primary bg-primary/5 p-4"
+                >
+                  <div>
+                    <p className="font-heading text-base font-bold uppercase text-white">
+                      {t.label}
+                    </p>
+                    <p className="text-sm text-neutral-400">Seats up to {t.capacity}</p>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <p className="font-heading text-xl font-bold text-primary">
+                      {formatSatang(t.priceSatang)}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => handleSelect(t)}
+                      aria-label={`Remove ${t.label}`}
+                      className="text-neutral-500 transition-colors hover:text-white"
+                    >
+                      ×
+                    </button>
+                  </div>
                 </div>
-                <p className="font-heading text-xl font-bold text-primary">
-                  {formatSatang(selected.priceSatang)}
-                </p>
-              </div>
+              ))}
             </div>
           )}
 
           <Button
             size="lg"
-            disabled={!selected || loading}
+            disabled={selectedTables.length === 0 || loading}
             onClick={onContinue}
             className="mt-6 font-mono text-sm uppercase tracking-[0.2em]"
           >
-            {loading ? "Reserving..." : "Continue to details →"}
+            {loading
+              ? "Reserving..."
+              : `Continue to details${selectedTables.length > 1 ? ` (${selectedTables.length} tables)` : ""} →`}
           </Button>
         </div>
 
@@ -135,8 +164,8 @@ export function FloorPlanBooking({
             eventName={eventName}
             venueName={venueName}
             startAt={new Date(startAt)}
-            items={selected ? [{ label: selected.label, amountSatang: selected.priceSatang }] : []}
-            totalSatang={selected?.priceSatang}
+            items={selectedTables.map((t) => ({ label: t.label, amountSatang: t.priceSatang }))}
+            totalSatang={selectedTables.length > 0 ? totalSatang : undefined}
           />
         </aside>
       </div>
