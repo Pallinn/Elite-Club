@@ -44,13 +44,13 @@ export default async function AdminBookingsPage({
         </a>
       </div>
 
-      <form className="flex gap-2">
+      <form className="flex flex-wrap gap-2">
         <input
           type="text"
           name="q"
           defaultValue={q}
           placeholder="Search name or email"
-          className="h-9 rounded-md border border-white/10 bg-neutral-900 px-3 text-sm text-white"
+          className="h-9 min-w-0 flex-1 rounded-md border border-white/10 bg-neutral-900 px-3 text-sm text-white sm:flex-none"
         />
         <select
           name="status"

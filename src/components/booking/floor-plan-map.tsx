@@ -24,6 +24,13 @@ function tableRadius(capacity: number, floor: 1 | 2) {
   return 88;
 }
 
+// The map scales fluidly to fit any container width, so on a ~375px phone
+// the small (cap-4) tables render at well under a 44px touch target. Rather
+// than resize the visible circle (which would change desktop too), give
+// every table an invisible hit-circle at least this SVG-unit radius - purely
+// a larger click/tap area, no visual difference on any screen size.
+const MIN_HIT_RADIUS = 66;
+
 // VVIP tables sit in a booth/lounge on the floor plan, not just their own
 // circle - the click target (and its decoration) should cover that whole
 // room, not just the small marker. Traced from the same wall/furniture
@@ -211,6 +218,9 @@ export function FloorPlanMap({
                   />
                 );
               })()}
+            {radius < MIN_HIT_RADIUS && (
+              <circle cx={cx} cy={cy} r={MIN_HIT_RADIUS} fill="transparent" style={{ pointerEvents: "all" }} />
+            )}
             <circle
               cx={cx}
               cy={cy}

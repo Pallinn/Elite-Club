@@ -3,6 +3,7 @@ import Link from "next/link";
 import { CircleUserRound } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { MobileNav } from "@/components/mobile-nav";
 
 export async function SiteHeader() {
   const session = await auth();
@@ -29,7 +30,7 @@ export async function SiteHeader() {
           </span>
         </nav>
 
-        <div className="ml-auto flex justify-end">
+        <div className="ml-auto flex items-center justify-end gap-3">
           {session?.user ? (
             <Link
               href="/account"
@@ -49,10 +50,15 @@ export async function SiteHeader() {
               )}
             </Link>
           ) : (
-            <Link href="/login" aria-label="Log in or sign up" className="text-white transition-colors hover:text-orange-400">
+            <Link
+              href="/login"
+              aria-label="Log in or sign up"
+              className="-m-2 p-2 text-white transition-colors hover:text-orange-400"
+            >
               <CircleUserRound className="h-7 w-7" strokeWidth={1.5} />
             </Link>
           )}
+          <MobileNav />
         </div>
       </div>
     </header>
