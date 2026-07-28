@@ -2,7 +2,7 @@ import Image from "next/image";
 
 export function HeroSection({ eventName }: { eventName: string }) {
   return (
-    <section className="snap-section relative flex min-h-screen flex-col items-center justify-center overflow-hidden text-center">
+    <section className="snap-section relative flex min-h-[100svh] flex-col items-center justify-center overflow-hidden text-center sm:min-h-screen">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-transparent via-transparent to-black"
