@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { getEventAvailability } from "@/lib/availability";
+import { tableProvisions } from "@/lib/table-provisions";
 import { SiteHeader } from "@/components/site-header";
 import { HeroSection } from "@/components/marketing/hero-section";
 import { EventsSection } from "@/components/marketing/events-section";
@@ -22,9 +23,24 @@ const TIER_IMAGE: Record<string, string | null> = {
   Regular: null,
 };
 
+const TIER_PERKS: Record<string, string[]> = {
+  VVIP: ["Priority entry", "Dedicated server"],
+  VIP: ["Main floor access", "All stages"],
+  Regular: ["Main floor access", "All stages"],
+};
+
 function tierNameFromZone(zoneName: string) {
   const dashIndex = zoneName.indexOf("—");
   return dashIndex === -1 ? zoneName.trim() : zoneName.slice(dashIndex + 1).trim();
+}
+
+function parseCapacityRange(range: string): [number, number] {
+  const [min, max] = range.split(/[–-]/).map((n) => parseInt(n.trim(), 10));
+  return [min, max ?? min];
+}
+
+function formatRange(min: number, max: number, unit: string) {
+  return min === max ? `${min}x ${unit}` : `${min}–${max}x ${unit}`;
 }
 
 export default async function Home() {
@@ -34,21 +50,32 @@ export default async function Home() {
 
   const tierMap = new Map<
     string,
-    { prices: number[]; booked: number; total: number; benefits: string[] }
+    {
+      prices: number[];
+      blackLabel: number[];
+      mixers: number[];
+      capacity: number[];
+      booked: number;
+      total: number;
+    }
   >();
   for (const zone of zones) {
     const tierName = tierNameFromZone(zone.name);
     const entry = tierMap.get(tierName) ?? {
       prices: [] as number[],
+      blackLabel: [] as number[],
+      mixers: [] as number[],
+      capacity: [] as number[],
       booked: 0,
       total: 0,
-      benefits: (zone.description ?? "")
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean),
     };
     for (const table of zone.tables) {
+      const provisions = tableProvisions(table.label);
+      const [capMin, capMax] = parseCapacityRange(provisions.capacityRange);
       entry.prices.push(table.priceSatang ?? zone.priceSatang);
+      entry.blackLabel.push(provisions.blackLabel);
+      entry.mixers.push(provisions.mixers);
+      entry.capacity.push(capMin, capMax);
       entry.total += 1;
       if (table.isBooked) entry.booked += 1;
     }
@@ -57,12 +84,29 @@ export default async function Home() {
 
   const tiers = TIER_ORDER.filter((name) => tierMap.has(name)).map((name) => {
     const entry = tierMap.get(name)!;
+    const priceMin = entry.prices.length ? Math.min(...entry.prices) : 0;
+    const priceMax = entry.prices.length ? Math.max(...entry.prices) : 0;
+    const blackLabelMin = Math.min(...entry.blackLabel);
+    const blackLabelMax = Math.max(...entry.blackLabel);
+    const mixersMin = Math.min(...entry.mixers);
+    const mixersMax = Math.max(...entry.mixers);
+    const capMin = Math.min(...entry.capacity);
+    const capMax = Math.max(...entry.capacity);
+
+    const benefits = [
+      formatRange(blackLabelMin, blackLabelMax, "Black Label"),
+      formatRange(mixersMin, mixersMax, "Mixers"),
+      capMin === capMax ? `Seats ${capMin}` : `Seats ${capMin}–${capMax}`,
+      ...(TIER_PERKS[name] ?? []),
+    ];
+
     return {
       id: name,
       name,
       imageUrl: TIER_IMAGE[name] ?? null,
-      benefits: entry.benefits,
-      fromSatang: entry.prices.length ? Math.min(...entry.prices) : 0,
+      benefits,
+      priceMinSatang: priceMin,
+      priceMaxSatang: priceMax,
       soldOut: entry.total > 0 && entry.booked === entry.total,
     };
   });

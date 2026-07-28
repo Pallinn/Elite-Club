@@ -13,3 +13,9 @@ export function formatSatang(satang: number): string {
     maximumFractionDigits: 0,
   }).format(satangToBaht(satang));
 }
+
+export function formatSatangRange(minSatang: number, maxSatang: number): string {
+  return minSatang === maxSatang
+    ? formatSatang(minSatang)
+    : `${formatSatang(minSatang)}–${formatSatang(maxSatang)}`;
+}

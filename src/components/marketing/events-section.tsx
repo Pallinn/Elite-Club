@@ -1,14 +1,15 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { formatSatang } from "@/lib/money";
+import { formatSatangRange } from "@/lib/money";
 
 type TierCard = {
   id: string;
   name: string;
   imageUrl: string | null;
   benefits: string[];
-  fromSatang: number;
+  priceMinSatang: number;
+  priceMaxSatang: number;
   soldOut: boolean;
 };
 
@@ -50,7 +51,9 @@ export function EventsSection({ tiers }: { tiers: TierCard[] }) {
                 <h3 className="font-heading text-xl font-bold uppercase text-white sm:text-2xl">{tier.name}</h3>
 
                 <p className="mt-2 font-heading font-bold text-amber-400">
-                  {tier.soldOut ? "Sold out" : `${formatSatang(tier.fromSatang)} / table`}
+                  {tier.soldOut
+                    ? "Sold out"
+                    : `${formatSatangRange(tier.priceMinSatang, tier.priceMaxSatang)} / table`}
                 </p>
 
                 {tier.benefits.length > 0 && (
