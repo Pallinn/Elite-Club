@@ -28,6 +28,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "No event is currently on sale." }, { status: 404 });
   }
 
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { phone: true },
+  });
+
   try {
     const result = await prisma.$transaction(async (tx) => {
       const now = new Date();
@@ -123,7 +128,7 @@ export async function POST(request: Request) {
           totalSatang,
           contactName: session.user.name ?? "",
           contactEmail: session.user.email ?? "",
-          contactPhone: null,
+          contactPhone: user?.phone ?? null,
           items: { create: itemsToCreate },
         },
       });

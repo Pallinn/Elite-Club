@@ -4,16 +4,12 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { finalizeBookingPayment } from "@/lib/tickets";
 
-// Dev-only escape hatch: skip Omise entirely and mark a booking paid, so the
-// rest of the flow (tickets, join codes, emails) can be tested without a
-// working payment gateway. Hard-blocked outside development.
+// Demo escape hatch: skip Omise entirely and mark a booking paid, so the
+// rest of the flow (tickets, join codes, emails) can be shown without a
+// working payment gateway.
 const schema = z.object({ bookingId: z.string().min(1) });
 
 export async function POST(request: Request) {
-  if (process.env.NODE_ENV === "production") {
-    return NextResponse.json({ error: "Not available in production." }, { status: 403 });
-  }
-
   const session = await auth();
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

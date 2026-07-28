@@ -88,24 +88,22 @@ export function PaymentPanel({
         </div>
       )}
 
-      {process.env.NODE_ENV !== "production" && (
-        <div className="mt-4 rounded-lg border border-dashed border-amber-500/40 bg-amber-500/5 p-4">
-          <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-amber-400">
-            Dev only
-          </p>
-          <p className="mt-1 text-xs text-neutral-400">
-            Skip Omise entirely and pretend this booking was just paid.
-          </p>
-          <Button
-            variant="outline"
-            onClick={markPaidForTesting}
-            disabled={testLoading}
-            className="mt-3 w-full border-amber-500/40 font-mono text-xs uppercase tracking-[0.15em] text-amber-400"
-          >
-            {testLoading ? "Marking paid..." : "Mark as paid (test)"}
-          </Button>
-        </div>
-      )}
+      <div className="mt-4 rounded-lg border border-dashed border-amber-500/40 bg-amber-500/5 p-4">
+        <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-amber-400">
+          Demo
+        </p>
+        <p className="mt-1 text-xs text-neutral-400">
+          Skip Omise entirely and pretend this booking was just paid.
+        </p>
+        <Button
+          variant="outline"
+          onClick={markPaidForTesting}
+          disabled={testLoading}
+          className="mt-3 w-full border-amber-500/40 font-mono text-xs uppercase tracking-[0.15em] text-amber-400"
+        >
+          {testLoading ? "Marking paid..." : "Click to finish payment"}
+        </Button>
+      </div>
     </div>
   );
 }

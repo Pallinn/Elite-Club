@@ -24,6 +24,8 @@ export default async function BookingDetailPage({
     },
   });
 
+  const contactPhoneDisplay = booking?.contactPhone?.trim() || "Not provided";
+
   if (!booking || booking.userId !== session.user.id) {
     redirect("/account/bookings");
   }
@@ -55,6 +57,26 @@ export default async function BookingDetailPage({
         <CardContent className="flex justify-between text-sm text-neutral-300">
           <span>Total paid</span>
           <span className="text-white">{formatSatang(booking.totalSatang)}</span>
+        </CardContent>
+      </Card>
+
+      <Card className="border-white/10 bg-neutral-950">
+        <CardHeader>
+          <CardTitle className="text-base text-white">Contact details</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2 text-sm text-neutral-300">
+          <div className="flex justify-between">
+            <span>Name</span>
+            <span className="text-white">{booking.contactName || "Not provided"}</span>
+          </div>
+          <div className="flex justify-between">
+            <span>Email</span>
+            <span className="text-white">{booking.contactEmail || "Not provided"}</span>
+          </div>
+          <div className="flex justify-between">
+            <span>Phone</span>
+            <span className="text-white">{contactPhoneDisplay}</span>
+          </div>
         </CardContent>
       </Card>
 

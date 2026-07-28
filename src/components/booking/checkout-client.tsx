@@ -167,10 +167,6 @@ export function CheckoutClient({ booking: initial }: { booking: Booking }) {
           ) : (
             <div>
               <h1 className="font-heading text-2xl font-bold text-white sm:text-3xl">Payment</h1>
-              <p className="mt-2 flex items-center gap-2 font-mono text-xs uppercase tracking-[0.15em] text-cyan-400">
-                <span className="h-1.5 w-1.5 rounded-full bg-cyan-400" />
-                256-bit encrypted · secure channel
-              </p>
               <div className="mt-6 max-w-md">
                 <PaymentPanel bookingId={booking.id} totalSatang={booking.totalSatang} />
               </div>
