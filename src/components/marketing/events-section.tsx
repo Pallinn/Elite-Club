@@ -15,13 +15,10 @@ type TierCard = {
 
 export function EventsSection({ tiers }: { tiers: TierCard[] }) {
   return (
-    <section id="events" className="snap-section flex min-h-[calc(100svh-4rem)] items-center border-t border-white/10 px-4 py-6 sm:min-h-[calc(100vh-4rem)] sm:py-24">
+    <section id="events" className="snap-section flex min-h-[calc(100svh-4rem)] items-start border-t border-white/10 px-4 py-6 sm:min-h-[calc(100vh-4rem)] sm:items-center sm:py-24">
       <div className="mx-auto w-full max-w-6xl">
         <div>
-          <p className="font-mono text-xs uppercase tracking-[0.3em] text-orange-500">
-            // Ticket tiers
-          </p>
-          <h2 className="mt-2 font-heading text-2xl font-bold text-white sm:mt-3 sm:text-5xl">
+          <h2 className="font-heading text-2xl font-bold text-white sm:text-5xl">
             Select your frequency
           </h2>
         </div>

@@ -5,11 +5,7 @@ export function PosterSection() {
     <section id="poster" className="snap-section flex min-h-[calc(100svh-4rem)] items-center border-t border-white/10 px-4 py-10 sm:min-h-[calc(100vh-4rem)] sm:py-24">
       <div className="mx-auto grid w-full max-w-6xl items-center gap-6 lg:grid-cols-2 lg:gap-16">
         <div>
-          <p className="font-mono text-xs uppercase tracking-[0.3em] text-orange-500">
-            // Official poster
-          </p>
-
-          <h2 className="mt-3 font-heading text-3xl font-bold uppercase leading-[1.05] sm:mt-4 sm:text-5xl lg:text-6xl">
+          <h2 className="font-heading text-3xl font-bold uppercase leading-[1.05] sm:text-5xl lg:text-6xl">
             <span className="block text-white">Off the</span>
             <span className="block text-white">grid.</span>
             <span className="block text-neutral-500">On the</span>
