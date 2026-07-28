@@ -2,7 +2,7 @@ import Image from "next/image";
 
 export function PosterSection() {
   return (
-    <section id="poster" className="snap-section flex min-h-[100svh] items-center border-t border-white/10 px-4 py-10 sm:min-h-screen sm:py-24">
+    <section id="poster" className="snap-section flex min-h-[calc(100svh-4rem)] items-center border-t border-white/10 px-4 py-10 sm:min-h-[calc(100vh-4rem)] sm:py-24">
       <div className="mx-auto grid w-full max-w-6xl items-center gap-6 lg:grid-cols-2 lg:gap-16">
         <div>
           <p className="font-mono text-xs uppercase tracking-[0.3em] text-orange-500">

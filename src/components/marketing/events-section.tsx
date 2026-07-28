@@ -14,7 +14,7 @@ type TierCard = {
 
 export function EventsSection({ tiers }: { tiers: TierCard[] }) {
   return (
-    <section id="events" className="snap-section flex min-h-[100svh] items-center border-t border-white/10 px-4 py-10 sm:min-h-screen sm:py-24">
+    <section id="events" className="snap-section flex min-h-[calc(100svh-4rem)] items-center border-t border-white/10 px-4 py-10 sm:min-h-[calc(100vh-4rem)] sm:py-24">
       <div className="mx-auto w-full max-w-6xl">
         <div className="flex items-end justify-between gap-4">
           <div>

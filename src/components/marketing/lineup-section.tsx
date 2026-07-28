@@ -13,7 +13,7 @@ export function LineupSection() {
   const [hovered, setHovered] = useState<number | null>(null);
 
   return (
-    <section id="lineup" className="snap-section flex min-h-[100svh] flex-col border-t border-white/10 py-10 sm:min-h-screen sm:py-16">
+    <section id="lineup" className="snap-section flex min-h-[calc(100svh-4rem)] flex-col border-t border-white/10 py-10 sm:min-h-[calc(100vh-4rem)] sm:py-16">
       <div className="mx-auto max-w-5xl px-4 text-center">
         <h2 className="font-heading text-3xl font-bold text-white sm:text-5xl">Lineup</h2>
       </div>
