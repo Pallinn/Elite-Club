@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin-auth";
 import { recordAudit } from "@/lib/audit";
+import { activeBookingItemFilter } from "@/lib/availability";
 
 const schema = z.object({
   label: z.string().trim().min(1).max(100).optional(),
@@ -24,6 +25,18 @@ export async function PATCH(request: Request, ctx: { params: Promise<{ tableId: 
 
   const before = await prisma.table.findUnique({ where: { id: tableId  } });
   if (!before) return NextResponse.json({ error: "Table not found" }, { status: 404 });
+
+  if (parsed.data.priceSatang !== undefined || parsed.data.capacity !== undefined) {
+    const activeItem = await prisma.bookingItem.findFirst({
+      where: { ...activeBookingItemFilter(), tableId },
+    });
+    if (activeItem) {
+      return NextResponse.json(
+        { error: "Price and capacity can only be changed while the table is not reserved." },
+        { status: 409 }
+      );
+    }
+  }
 
   const updated = await prisma.table.update({
     where: { id: tableId  },

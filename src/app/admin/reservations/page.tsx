@@ -1,11 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { ReservationsTable, type ReservationRow } from "@/components/admin/reservations-table";
+import { tierOf } from "@/lib/tiers";
+import { activeBookingItemFilter } from "@/lib/availability";
 
 export const dynamic = "force-dynamic";
-
-function tierOf(zoneName: string): "VVIP" | "Normal" {
-  return /vvip/i.test(zoneName) ? "VVIP" : "Normal";
-}
 
 /** Extract a sortable numeric key from labels like "1", "VIP 3", "VVIP1", "V1 Lounge". */
 function tableSortKey(label: string): number {
@@ -15,7 +13,11 @@ function tableSortKey(label: string): number {
 
 export default async function AdminReservationsPage() {
   const items = await prisma.bookingItem.findMany({
-    where: { isActive: true, tableId: { not: null } },
+    // isActive alone isn't enough here — a HOLD past its holdExpiresAt only
+    // gets flipped isActive=false by the daily cron sweep (see
+    // vercel.json), so a stale hold can otherwise sit visible for hours.
+    // activeBookingItemFilter treats it as inactive the moment it expires.
+    where: { ...activeBookingItemFilter(), tableId: { not: null } },
     include: {
       table: true,
       zone: true,
@@ -52,7 +54,7 @@ export default async function AdminReservationsPage() {
         </p>
         <h1 className="mt-2 font-heading text-3xl font-bold text-white">Table reservations</h1>
         <p className="mt-1 text-sm text-neutral-500">
-          Sorted VVIP → Normal, then by table number. Search by email, table code, buyer name.
+          Sorted VVIP → VIP → Normal, then by table number. Search by email, table code, buyer name.
         </p>
       </div>
 

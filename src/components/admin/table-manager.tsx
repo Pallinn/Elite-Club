@@ -8,9 +8,15 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { FloorPlanMap, type FloorTable } from "@/components/booking/floor-plan-map";
 import { formatSatang } from "@/lib/money";
+import { TableRoster, type RosterTicket } from "@/components/admin/table-roster";
+import { TIER_BADGE_CLASS, type Tier } from "@/lib/tiers";
 
 export type AdminTable = FloorTable & {
   isLocked: boolean;
+  tier: Tier;
+  bookingItemId: string | null;
+  paidStatus: "PAID" | "HOLD" | "EXPIRED" | "CANCELLED" | "FAILED" | null;
+  tickets: RosterTicket[];
 };
 
 export function TableManager({ tables }: { tables: AdminTable[] }) {
@@ -88,9 +94,11 @@ export function TableManager({ tables }: { tables: AdminTable[] }) {
         <FloorPlanMap
           floor={floor}
           tables={floorTables}
+          allTables={tables}
           selectedKeys={selectedKeys}
           onSelect={selectTable}
           onSwitchFloor={setFloor}
+          selectableWhenBooked
         />
 
         <div className="mt-4 flex flex-wrap gap-4 font-mono text-[10px] uppercase tracking-[0.15em] text-neutral-500">
@@ -115,52 +123,67 @@ export function TableManager({ tables }: { tables: AdminTable[] }) {
         ) : (
           <div className="space-y-5">
             <div>
-              <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-neutral-500">
-                Editing
-              </p>
-              <p className="mt-1 font-heading text-2xl font-bold text-white">{selected.label}</p>
-              <p className="text-xs text-neutral-500">
+              <div className="flex items-center gap-2">
+                <p className="font-heading text-2xl font-bold text-white">{selected.label}</p>
+                <span
+                  className={`rounded border px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.15em] ${TIER_BADGE_CLASS[selected.tier]}`}
+                >
+                  {selected.tier}
+                </span>
+              </div>
+              <p className="mt-1 text-xs text-neutral-500">
                 Currently {selected.isBooked ? "booked" : "available"} · {selected.isLocked ? "LOCKED" : "unlocked"}
               </p>
             </div>
 
-            <div className="space-y-2">
-              <Label className="font-mono text-[10px] uppercase tracking-[0.15em] text-neutral-500">
-                Price (THB)
-              </Label>
-              <Input
-                type="number"
-                value={priceInput}
-                onChange={(e) => setPriceInput(e.target.value)}
-                className="border-white/10 bg-black/60"
+            {selected.isBooked && selected.bookingItemId ? (
+              <TableRoster
+                bookingItemId={selected.bookingItemId}
+                capacity={selected.capacity}
+                paidStatus={selected.paidStatus ?? "PAID"}
+                tickets={selected.tickets}
               />
-              <p className="font-mono text-[10px] text-neutral-500">
-                Current: {formatSatang(selected.priceSatang)}
-              </p>
-            </div>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  <Label className="font-mono text-[10px] uppercase tracking-[0.15em] text-neutral-500">
+                    Price (THB)
+                  </Label>
+                  <Input
+                    type="number"
+                    value={priceInput}
+                    onChange={(e) => setPriceInput(e.target.value)}
+                    className="border-white/10 bg-black/60"
+                  />
+                  <p className="font-mono text-[10px] text-neutral-500">
+                    Current: {formatSatang(selected.priceSatang)}
+                  </p>
+                </div>
 
-            <div className="space-y-2">
-              <Label className="font-mono text-[10px] uppercase tracking-[0.15em] text-neutral-500">
-                Capacity
-              </Label>
-              <Input
-                type="number"
-                value={capacityInput}
-                onChange={(e) => setCapacityInput(e.target.value)}
-                className="border-white/10 bg-black/60"
-              />
-              <p className="font-mono text-[10px] text-neutral-500">
-                Current: {selected.capacity} seats
-              </p>
-            </div>
+                <div className="space-y-2">
+                  <Label className="font-mono text-[10px] uppercase tracking-[0.15em] text-neutral-500">
+                    Capacity
+                  </Label>
+                  <Input
+                    type="number"
+                    value={capacityInput}
+                    onChange={(e) => setCapacityInput(e.target.value)}
+                    className="border-white/10 bg-black/60"
+                  />
+                  <p className="font-mono text-[10px] text-neutral-500">
+                    Current: {selected.capacity} seats
+                  </p>
+                </div>
 
-            <Button
-              onClick={saveEdit}
-              disabled={busy}
-              className="w-full font-mono text-xs uppercase tracking-[0.15em]"
-            >
-              {busy ? "Saving…" : "Save changes"}
-            </Button>
+                <Button
+                  onClick={saveEdit}
+                  disabled={busy}
+                  className="w-full font-mono text-xs uppercase tracking-[0.15em]"
+                >
+                  {busy ? "Saving…" : "Save changes"}
+                </Button>
+              </>
+            )}
 
             <div className="border-t border-white/10 pt-4">
               <Button
