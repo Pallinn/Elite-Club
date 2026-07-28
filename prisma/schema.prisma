@@ -31,6 +31,7 @@ model User {
   passwordResetTokens PasswordResetToken[]
   ticketsCheckedIn    Ticket[]             @relation("TicketCheckedInBy")
   ticketsHeld         Ticket[]             @relation("TicketHolder")
+  connectProfile      ConnectProfile?
 }
 
 enum UserRole {
@@ -278,6 +279,79 @@ enum TicketStatus {
   VALID
   USED
   VOID
+}
+
+// ---------- Connect / Matching ----------
+// Swipe-to-match feature, gated to users holding a valid ticket to the event.
+
+model ConnectProfile {
+  id          String        @id @default(uuid())
+  userId      String        @unique
+  nickname    String
+  age         Int
+  description String        @db.Text
+  instagram   String
+  gender      ConnectGender
+  showMe      ConnectShowMe
+  photoUrl    String
+  tags        String[]
+  isActive    Boolean       @default(true)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  swipesGiven    ConnectSwipe[] @relation("SwipeFrom")
+  swipesReceived ConnectSwipe[] @relation("SwipeTo")
+  matchesAsA     ConnectMatch[] @relation("MatchProfileA")
+  matchesAsB     ConnectMatch[] @relation("MatchProfileB")
+
+  @@index([gender, isActive])
+}
+
+enum ConnectGender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum ConnectShowMe {
+  MALE
+  FEMALE
+  EVERYONE
+}
+
+model ConnectSwipe {
+  id            String                @id @default(uuid())
+  fromProfileId String
+  toProfileId   String
+  direction     ConnectSwipeDirection
+  createdAt     DateTime              @default(now())
+
+  fromProfile ConnectProfile @relation("SwipeFrom", fields: [fromProfileId], references: [id], onDelete: Cascade)
+  toProfile   ConnectProfile @relation("SwipeTo", fields: [toProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([fromProfileId, toProfileId])
+  @@index([toProfileId])
+}
+
+enum ConnectSwipeDirection {
+  LIKE
+  PASS
+}
+
+model ConnectMatch {
+  id         String   @id @default(uuid())
+  // Always stored with profileAId < profileBId so a pair can only match once.
+  profileAId String
+  profileBId String
+  createdAt  DateTime @default(now())
+
+  profileA ConnectProfile @relation("MatchProfileA", fields: [profileAId], references: [id], onDelete: Cascade)
+  profileB ConnectProfile @relation("MatchProfileB", fields: [profileBId], references: [id], onDelete: Cascade)
+
+  @@unique([profileAId, profileBId])
+  @@index([profileBId])
 }
 
 // ---------- Activity log ----------

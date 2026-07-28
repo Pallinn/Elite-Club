@@ -22,12 +22,9 @@ export async function SiteHeader() {
           <Link href="/book" className="transition-colors hover:text-white">
             Book
           </Link>
-          <span className="flex cursor-not-allowed items-center gap-1.5 text-neutral-600">
+          <Link href="/connect" className="transition-colors hover:text-white">
             Connect
-            <span className="rounded border border-white/10 px-1 py-0.5 text-[9px] text-neutral-500">
-              Soon
-            </span>
-          </span>
+          </Link>
         </nav>
 
         <div className="ml-auto flex items-center justify-end gap-3">
