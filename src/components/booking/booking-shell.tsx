@@ -21,7 +21,7 @@ export function BookingShell({
   const activeIndex = STEPS.findIndex((s) => s.key === step);
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-neutral-900">
       <header className="flex h-16 items-center justify-between border-b border-white/10 px-4 sm:px-8">
         <Link
           href={backHref}

@@ -46,16 +46,10 @@ export function FloorPlanBooking({
   const selectedTables = tables.filter((t) => selectedKeys.has(t.key));
   const totalSatang = selectedTables.reduce((sum, t) => sum + t.priceSatang, 0);
 
+  // Only one table can be booked per order - picking a new table replaces
+  // whatever was previously selected instead of adding to it.
   function handleSelect(table: FloorTable) {
-    setSelectedKeys((prev) => {
-      const next = new Set(prev);
-      if (next.has(table.key)) {
-        next.delete(table.key);
-      } else {
-        next.add(table.key);
-      }
-      return next;
-    });
+    setSelectedKeys((prev) => (prev.has(table.key) ? new Set() : new Set([table.key])));
   }
 
   async function onContinue() {
@@ -92,6 +86,7 @@ export function FloorPlanBooking({
           <FloorPlanMap
             floor={floor}
             tables={floorTables}
+            allTables={tables}
             selectedKeys={selectedKeys}
             onSelect={handleSelect}
             onSwitchFloor={setFloor}
