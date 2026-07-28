@@ -28,7 +28,7 @@ export function LineupSection() {
               data-state={state}
               onMouseEnter={() => setHovered(i)}
               onMouseLeave={() => setHovered(null)}
-              className="group relative h-[52vh] w-[78vw] max-w-xs shrink-0 snap-center overflow-hidden rounded-lg border border-white/10 bg-black transition-[width] duration-500 ease-out sm:h-auto sm:max-w-none sm:shrink sm:flex-none sm:rounded-none sm:border-0 sm:data-[state=hovered]:w-1/2 sm:data-[state=neutral]:w-1/3 sm:data-[state=shrunk]:w-1/4"
+              className="group relative h-[52vh] w-[78vw] max-w-xs shrink-0 snap-center overflow-hidden rounded-lg border border-white/10 bg-black/70 transition-[width] duration-500 ease-out sm:h-auto sm:max-w-none sm:shrink sm:flex-none sm:rounded-none sm:border-0 sm:data-[state=hovered]:w-1/2 sm:data-[state=neutral]:w-1/3 sm:data-[state=shrunk]:w-1/4"
             >
               <span className="pointer-events-none absolute left-4 top-4 z-10 h-5 w-5 border-l border-t border-amber-400/40" />
               <span className="pointer-events-none absolute right-4 top-4 z-10 h-5 w-5 border-r border-t border-amber-400/40" />
