@@ -30,14 +30,6 @@ export default async function BookingDetailPage({
     redirect("/account/bookings");
   }
 
-  const tickets = booking.items.flatMap((item) =>
-    item.tickets.map((ticket) => ({
-      ...ticket,
-      label: item.table ? item.table.label : item.zone.name,
-      isMine: ticket.holderUserId === session.user.id,
-    }))
-  );
-
   const tableJoinCodes = booking.items.filter((item) => item.table && item.joinCode);
 
   return (
@@ -45,10 +37,6 @@ export default async function BookingDetailPage({
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold text-white">{booking.event.name}</h1>
-          <p className="text-sm text-neutral-400">
-            {booking.event.venueName} &middot;{" "}
-            {booking.event.startAt.toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}
-          </p>
         </div>
         <Badge variant={booking.status === "PAID" ? "default" : "secondary"}>{booking.status}</Badge>
       </div>
@@ -110,32 +98,6 @@ export default async function BookingDetailPage({
 
           <div className="flex justify-end">
             <ResendTicketsButton bookingId={booking.id} />
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            {tickets.map((ticket) => (
-              <Card key={ticket.id} className="border-white/10 bg-neutral-950">
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between text-base text-white">
-                    {ticket.label}
-                    {!ticket.isMine && (
-                      <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-neutral-500">
-                        Guest ticket
-                      </span>
-                    )}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="flex flex-col items-center gap-3">
-                  <p className="text-xs text-neutral-400">{ticket.ticketNumber}</p>
-                  <a
-                    href={`/api/tickets/${ticket.id}/pdf`}
-                    className="text-xs text-white underline underline-offset-4"
-                  >
-                    Download PDF
-                  </a>
-                </CardContent>
-              </Card>
-            ))}
           </div>
         </>
       )}
