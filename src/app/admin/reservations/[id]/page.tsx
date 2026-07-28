@@ -5,12 +5,9 @@ import {
   ReservationDetail,
   type ReservationDetailData,
 } from "@/components/admin/reservation-detail";
+import { tierOf } from "@/lib/tiers";
 
 export const dynamic = "force-dynamic";
-
-function tierOf(zoneName: string): "VVIP" | "Normal" {
-  return /vvip/i.test(zoneName) ? "VVIP" : "Normal";
-}
 
 export default async function AdminReservationDetailPage({
   params,

@@ -4,11 +4,12 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { formatSatang } from "@/lib/money";
+import { TIER_ORDER, TIER_BADGE_CLASS, type Tier } from "@/lib/tiers";
 
 export type ReservationRow = {
   id: string; // BookingItem id
   bookingId: string;
-  tier: "VVIP" | "Normal";
+  tier: Tier;
   zoneName: string;
   tableLabel: string;
   tableSortKey: number;
@@ -22,7 +23,6 @@ export type ReservationRow = {
   createdAt: string;
 };
 
-const TIER_ORDER: Record<ReservationRow["tier"], number> = { VVIP: 0, Normal: 1 };
 const STATUS_TINT: Record<ReservationRow["paidStatus"], string> = {
   PAID: "text-emerald-400 border-emerald-400/40",
   HOLD: "text-amber-400 border-amber-400/40",
@@ -33,7 +33,7 @@ const STATUS_TINT: Record<ReservationRow["paidStatus"], string> = {
 
 export function ReservationsTable({ rows }: { rows: ReservationRow[] }) {
   const [query, setQuery] = useState("");
-  const [tierFilter, setTierFilter] = useState<"ALL" | "VVIP" | "Normal">("ALL");
+  const [tierFilter, setTierFilter] = useState<"ALL" | Tier>("ALL");
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -64,7 +64,7 @@ export function ReservationsTable({ rows }: { rows: ReservationRow[] }) {
           className="max-w-md border-white/10 bg-neutral-950"
         />
         <div className="inline-flex rounded-md border border-white/10 bg-neutral-950 p-1">
-          {(["ALL", "VVIP", "Normal"] as const).map((t) => (
+          {(["ALL", "VVIP", "VIP", "Normal"] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTierFilter(t)}
@@ -102,9 +102,7 @@ export function ReservationsTable({ rows }: { rows: ReservationRow[] }) {
               >
                 <td className="px-4 py-3">
                   <span
-                    className={`rounded border px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.15em] ${
-                      r.tier === "VVIP" ? "border-orange-500/50 text-orange-500" : "border-amber-300/40 text-amber-300"
-                    }`}
+                    className={`rounded border px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.15em] ${TIER_BADGE_CLASS[r.tier]}`}
                   >
                     {r.tier}
                   </span>

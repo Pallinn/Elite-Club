@@ -1,10 +1,16 @@
-import { CheckinScanner } from "@/components/admin/checkin-scanner";
+import { TableCodeCheckin } from "@/components/admin/table-code-checkin";
 
 export default function AdminCheckinPage() {
   return (
-    <div className="space-y-4">
-      <h1 className="text-xl font-semibold text-white">Check-in</h1>
-      <CheckinScanner />
+    <div className="space-y-6">
+      <div>
+        <p className="font-mono text-xs uppercase tracking-[0.3em] text-orange-500">// Check-in</p>
+        <h1 className="mt-2 font-heading text-3xl font-bold text-white">Table check-in</h1>
+        <p className="mt-1 text-sm text-neutral-500">
+          Enter a table&apos;s code to pull up its roster, then check people in one by one.
+        </p>
+      </div>
+      <TableCodeCheckin />
     </div>
   );
 }
