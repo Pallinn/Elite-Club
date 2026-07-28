@@ -7,7 +7,6 @@ import { HeroSection } from "@/components/marketing/hero-section";
 import { EventsSection } from "@/components/marketing/events-section";
 import { LineupSection } from "@/components/marketing/lineup-section";
 import { PosterSection } from "@/components/marketing/poster-section";
-import { FooterSection } from "@/components/marketing/footer-section";
 import { StickyBuyBar } from "@/components/marketing/sticky-buy-bar";
 import { InstagramBadge } from "@/components/marketing/instagram-badge";
 import { ScrollSnap } from "@/components/marketing/scroll-snap";
@@ -135,10 +134,6 @@ export default async function Home() {
 
         {event && tiers.length > 0 && <EventsSection tiers={tiers} />}
       </main>
-
-      <div className="pb-24">
-        <FooterSection />
-      </div>
 
       <InstagramBadge />
       <StickyBuyBar isLoggedIn={Boolean(session?.user)} />
