@@ -43,20 +43,22 @@ async function main() {
   });
   await prisma.zone.deleteMany({ where: { id: { in: retiredZoneIds } } });
 
-  // Tiers: VVIP (the large circles marked "VIP" on the floor plan — the
-  // booth + lounge on Floor 1, the lounge on Floor 2), capacity 8,
-  // ฿15,000/table, 2x Black Label + mixers.
-  // VIP (the plain round tables on Floor 2, labeled "VIP 1"-"VIP 5"),
-  // capacity 4, ฿5,000/table, 1x Black Label.
-  // Regular (the plain numbered tables 1-16 on Floor 1), capacity 4,
-  // ฿5,000/table, 1x Black Label.
+  // Tiers (see src/lib/table-provisions.ts for the exact per-table bottle/
+  // mixer counts and capacity ranges):
+  // Regular (numbered tables 1-16 on Floor 1), capacity 4-6, ฿3,300/table,
+  // 1x Black Label + 3x mixers.
+  // VIP 1 & VIP 5 (Floor 2), capacity 6-8, ฿7,800/table, 1x Black Label + 4x mixers.
+  // VIP 2-4 (Floor 2), capacity 4-6, ฿5,800/table, 1x Black Label + 3x mixers.
+  // VVIP1 (Floor 1 lounge), capacity 12-16, ฿12,000/table, 2x Black Label + 8x mixers.
+  // VVIP2 (Floor 1 booth), capacity 8-12, ฿12,000/table, 2x Black Label + 6x mixers.
+  // VVIP3 (Floor 2 lounge), capacity 6-8, ฿10,000/table, 2x Black Label + 5x mixers.
 
   const floor1RegularFields = {
     eventId: event.id,
     name: "Floor 1 — Regular",
     type: "VIP_TABLE" as const,
-    description: "1x Black Label, Main floor access, All stages",
-    priceSatang: 500000, // 5,000 THB
+    description: "1x Black Label, 3x Mixers, Main floor access, All stages",
+    priceSatang: 330000, // 3,300 THB
     totalCapacity: 16,
     sortOrder: 0,
   };
@@ -71,7 +73,7 @@ async function main() {
     name: "Floor 1 — VVIP",
     type: "VIP_TABLE" as const,
     description: "2x Black Label, Mixers, Priority entry, Dedicated server",
-    priceSatang: 1500000, // 15,000 THB
+    priceSatang: 1200000, // 12,000 THB
     totalCapacity: 2,
     sortOrder: 1,
   };
@@ -85,8 +87,8 @@ async function main() {
     eventId: event.id,
     name: "Floor 2 — VIP",
     type: "VIP_TABLE" as const,
-    description: "1x Black Label, Main floor access, All stages",
-    priceSatang: 500000, // 5,000 THB
+    description: "1x Black Label, Mixers, Main floor access, All stages",
+    priceSatang: 580000, // 5,800 THB (VIP 2-4 base; VIP 1 & 5 override per-table)
     totalCapacity: 5,
     sortOrder: 2,
   };
@@ -100,8 +102,8 @@ async function main() {
     eventId: event.id,
     name: "Floor 2 — VVIP",
     type: "VIP_TABLE" as const,
-    description: "2x Black Label, Mixers, Priority entry, Dedicated server",
-    priceSatang: 1500000, // 15,000 THB
+    description: "2x Black Label, 5x Mixers, Priority entry, Dedicated server",
+    priceSatang: 1000000, // 10,000 THB
     totalCapacity: 1,
     sortOrder: 3,
   };
@@ -130,33 +132,35 @@ async function main() {
   // numbers/labels drawn on the plan (1–16, VVIP1, VVIP2 on Floor 1;
   // VIP 1–5, VVIP3 on Floor 2).
   const tables: SeedTable[] = [
-    // Floor 1 — 16 VIP tables (plain numbered circles)
-    { id: "seed-t-f1-01", zoneId: floor1Regular.id, label: "1", capacity: 4, priceSatang: null, floor: 1, positionXPct: 88.29, positionYPct: 30.18 },
-    { id: "seed-t-f1-02", zoneId: floor1Regular.id, label: "2", capacity: 4, priceSatang: null, floor: 1, positionXPct: 88.29, positionYPct: 41.75 },
-    { id: "seed-t-f1-03", zoneId: floor1Regular.id, label: "3", capacity: 4, priceSatang: null, floor: 1, positionXPct: 77.94, positionYPct: 18.61 },
-    { id: "seed-t-f1-04", zoneId: floor1Regular.id, label: "4", capacity: 4, priceSatang: null, floor: 1, positionXPct: 77.94, positionYPct: 30.18 },
-    { id: "seed-t-f1-05", zoneId: floor1Regular.id, label: "5", capacity: 4, priceSatang: null, floor: 1, positionXPct: 77.94, positionYPct: 41.75 },
-    { id: "seed-t-f1-06", zoneId: floor1Regular.id, label: "6", capacity: 4, priceSatang: null, floor: 1, positionXPct: 67.59, positionYPct: 18.61 },
-    { id: "seed-t-f1-07", zoneId: floor1Regular.id, label: "7", capacity: 4, priceSatang: null, floor: 1, positionXPct: 67.59, positionYPct: 30.18 },
-    { id: "seed-t-f1-08", zoneId: floor1Regular.id, label: "8", capacity: 4, priceSatang: null, floor: 1, positionXPct: 57.24, positionYPct: 18.61 },
-    { id: "seed-t-f1-09", zoneId: floor1Regular.id, label: "9", capacity: 4, priceSatang: null, floor: 1, positionXPct: 57.24, positionYPct: 30.18 },
-    { id: "seed-t-f1-10", zoneId: floor1Regular.id, label: "10", capacity: 4, priceSatang: null, floor: 1, positionXPct: 46.89, positionYPct: 18.61 },
-    { id: "seed-t-f1-11", zoneId: floor1Regular.id, label: "11", capacity: 4, priceSatang: null, floor: 1, positionXPct: 46.89, positionYPct: 30.18 },
-    { id: "seed-t-f1-12", zoneId: floor1Regular.id, label: "12", capacity: 4, priceSatang: null, floor: 1, positionXPct: 36.54, positionYPct: 18.61 },
-    { id: "seed-t-f1-13", zoneId: floor1Regular.id, label: "13", capacity: 4, priceSatang: null, floor: 1, positionXPct: 26.18, positionYPct: 18.61 },
-    { id: "seed-t-f1-14", zoneId: floor1Regular.id, label: "14", capacity: 4, priceSatang: null, floor: 1, positionXPct: 15.83, positionYPct: 18.61 },
-    { id: "seed-t-f1-15", zoneId: floor1Regular.id, label: "15", capacity: 4, priceSatang: null, floor: 1, positionXPct: 15.79, positionYPct: 30.18 },
-    { id: "seed-t-f1-16", zoneId: floor1Regular.id, label: "16", capacity: 4, priceSatang: null, floor: 1, positionXPct: 15.83, positionYPct: 41.93 },
-    // Floor 1 — VVIP1 (big lounge) + VVIP2 (booth)
-    { id: "seed-t-f1-vvip2", zoneId: floor1Vvip.id, label: "VVIP2", capacity: 6, priceSatang: null, floor: 1, positionXPct: 32.5, positionYPct: 58.01 },
-    { id: "seed-t-f1-vvip1", zoneId: floor1Vvip.id, label: "VVIP1", capacity: 8, priceSatang: null, floor: 1, positionXPct: 85.96, positionYPct: 76.76 },
-    // Floor 2 — 5 VIP tables (plain circles, "VIP N" labeled on the plan)
-    { id: "seed-t-f2-01", zoneId: floor2Vip.id, label: "VIP 1", capacity: 4, priceSatang: null, floor: 2, positionXPct: 14.34, positionYPct: 84.78 },
-    { id: "seed-t-f2-02", zoneId: floor2Vip.id, label: "VIP 2", capacity: 4, priceSatang: null, floor: 2, positionXPct: 33.38, positionYPct: 84.78 },
-    { id: "seed-t-f2-03", zoneId: floor2Vip.id, label: "VIP 3", capacity: 4, priceSatang: null, floor: 2, positionXPct: 51.81, positionYPct: 76.45 },
-    { id: "seed-t-f2-04", zoneId: floor2Vip.id, label: "VIP 4", capacity: 4, priceSatang: null, floor: 2, positionXPct: 69.29, positionYPct: 61.71 },
-    { id: "seed-t-f2-05", zoneId: floor2Vip.id, label: "VIP 5", capacity: 4, priceSatang: null, floor: 2, positionXPct: 85.23, positionYPct: 47.46 },
-    // Floor 2 — VVIP3 lounge
+    // Floor 1 — 16 regular tables (plain numbered circles), capacity 4-6
+    { id: "seed-t-f1-01", zoneId: floor1Regular.id, label: "1", capacity: 6, priceSatang: null, floor: 1, positionXPct: 88.29, positionYPct: 30.18 },
+    { id: "seed-t-f1-02", zoneId: floor1Regular.id, label: "2", capacity: 6, priceSatang: null, floor: 1, positionXPct: 88.29, positionYPct: 41.75 },
+    { id: "seed-t-f1-03", zoneId: floor1Regular.id, label: "3", capacity: 6, priceSatang: null, floor: 1, positionXPct: 77.94, positionYPct: 18.61 },
+    { id: "seed-t-f1-04", zoneId: floor1Regular.id, label: "4", capacity: 6, priceSatang: null, floor: 1, positionXPct: 77.94, positionYPct: 30.18 },
+    { id: "seed-t-f1-05", zoneId: floor1Regular.id, label: "5", capacity: 6, priceSatang: null, floor: 1, positionXPct: 77.94, positionYPct: 41.75 },
+    { id: "seed-t-f1-06", zoneId: floor1Regular.id, label: "6", capacity: 6, priceSatang: null, floor: 1, positionXPct: 67.59, positionYPct: 18.61 },
+    { id: "seed-t-f1-07", zoneId: floor1Regular.id, label: "7", capacity: 6, priceSatang: null, floor: 1, positionXPct: 67.59, positionYPct: 30.18 },
+    { id: "seed-t-f1-08", zoneId: floor1Regular.id, label: "8", capacity: 6, priceSatang: null, floor: 1, positionXPct: 57.24, positionYPct: 18.61 },
+    { id: "seed-t-f1-09", zoneId: floor1Regular.id, label: "9", capacity: 6, priceSatang: null, floor: 1, positionXPct: 57.24, positionYPct: 30.18 },
+    { id: "seed-t-f1-10", zoneId: floor1Regular.id, label: "10", capacity: 6, priceSatang: null, floor: 1, positionXPct: 46.89, positionYPct: 18.61 },
+    { id: "seed-t-f1-11", zoneId: floor1Regular.id, label: "11", capacity: 6, priceSatang: null, floor: 1, positionXPct: 46.89, positionYPct: 30.18 },
+    { id: "seed-t-f1-12", zoneId: floor1Regular.id, label: "12", capacity: 6, priceSatang: null, floor: 1, positionXPct: 36.54, positionYPct: 18.61 },
+    { id: "seed-t-f1-13", zoneId: floor1Regular.id, label: "13", capacity: 6, priceSatang: null, floor: 1, positionXPct: 26.18, positionYPct: 18.61 },
+    { id: "seed-t-f1-14", zoneId: floor1Regular.id, label: "14", capacity: 6, priceSatang: null, floor: 1, positionXPct: 15.83, positionYPct: 18.61 },
+    { id: "seed-t-f1-15", zoneId: floor1Regular.id, label: "15", capacity: 6, priceSatang: null, floor: 1, positionXPct: 15.79, positionYPct: 30.18 },
+    { id: "seed-t-f1-16", zoneId: floor1Regular.id, label: "16", capacity: 6, priceSatang: null, floor: 1, positionXPct: 15.83, positionYPct: 41.93 },
+    // Floor 1 — VVIP1 (big lounge, capacity 12-16) + VVIP2 (booth, capacity 8-12)
+    { id: "seed-t-f1-vvip2", zoneId: floor1Vvip.id, label: "VVIP2", capacity: 12, priceSatang: null, floor: 1, positionXPct: 32.5, positionYPct: 58.01 },
+    { id: "seed-t-f1-vvip1", zoneId: floor1Vvip.id, label: "VVIP1", capacity: 16, priceSatang: null, floor: 1, positionXPct: 85.96, positionYPct: 76.76 },
+    // Floor 2 — 5 VIP tables (plain circles, "VIP N" labeled on the plan).
+    // VIP 1 & VIP 5 are the premium pair (capacity 6-8, ฿7,800); VIP 2-4 are
+    // the zone base rate (capacity 4-6, ฿5,800).
+    { id: "seed-t-f2-01", zoneId: floor2Vip.id, label: "VIP 1", capacity: 8, priceSatang: 780000, floor: 2, positionXPct: 14.34, positionYPct: 84.78 },
+    { id: "seed-t-f2-02", zoneId: floor2Vip.id, label: "VIP 2", capacity: 6, priceSatang: null, floor: 2, positionXPct: 33.38, positionYPct: 84.78 },
+    { id: "seed-t-f2-03", zoneId: floor2Vip.id, label: "VIP 3", capacity: 6, priceSatang: null, floor: 2, positionXPct: 51.81, positionYPct: 76.45 },
+    { id: "seed-t-f2-04", zoneId: floor2Vip.id, label: "VIP 4", capacity: 6, priceSatang: null, floor: 2, positionXPct: 69.29, positionYPct: 61.71 },
+    { id: "seed-t-f2-05", zoneId: floor2Vip.id, label: "VIP 5", capacity: 8, priceSatang: 780000, floor: 2, positionXPct: 85.23, positionYPct: 47.46 },
+    // Floor 2 — VVIP3 lounge, capacity 6-8
     { id: "seed-t-f2-vvip3", zoneId: floor2Vvip.id, label: "VVIP3", capacity: 8, priceSatang: null, floor: 2, positionXPct: 92.03, positionYPct: 21.86 },
   ];
 

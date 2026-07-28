@@ -1,9 +1,6 @@
 import { redirect } from "next/navigation";
-import QRCode from "qrcode";
-import Image from "next/image";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { buildTicketQrPayload } from "@/lib/qr";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default async function TicketDetailPage({
@@ -33,7 +30,6 @@ export default async function TicketDetailPage({
 
   const { bookingItem } = ticket;
   const label = bookingItem.table ? bookingItem.table.label : bookingItem.zone.name;
-  const qrDataUrl = await QRCode.toDataURL(buildTicketQrPayload(ticket.id));
 
   return (
     <div className="space-y-6">
@@ -53,14 +49,6 @@ export default async function TicketDetailPage({
           <CardTitle className="text-base text-white">{label}</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col items-center gap-3">
-          <Image
-            src={qrDataUrl}
-            alt={ticket.ticketNumber}
-            width={220}
-            height={220}
-            unoptimized
-            className="rounded bg-white p-2"
-          />
           <p className="text-xs text-neutral-400">{ticket.ticketNumber}</p>
           <a
             href={`/api/tickets/${ticket.id}/pdf`}

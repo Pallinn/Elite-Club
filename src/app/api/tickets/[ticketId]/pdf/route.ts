@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
-import QRCode from "qrcode";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { buildTicketQrPayload } from "@/lib/qr";
 import { TicketDocument } from "@/lib/pdf/ticket-document";
 
 export async function GET(
@@ -29,8 +27,6 @@ export async function GET(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const qrDataUrl = await QRCode.toDataURL(buildTicketQrPayload(ticket.id));
-
   const pdfBuffer = await renderToBuffer(
     TicketDocument({
       eventName: ticket.bookingItem.booking.event.name,
@@ -43,7 +39,6 @@ export async function GET(
       zoneLabel: ticket.bookingItem.table
         ? ticket.bookingItem.table.label
         : ticket.bookingItem.zone.name,
-      qrDataUrl,
     })
   );
 

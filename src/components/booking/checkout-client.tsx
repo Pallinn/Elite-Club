@@ -190,8 +190,6 @@ export function CheckoutClient({ booking: initial }: { booking: Booking }) {
         <aside className="lg:sticky lg:top-10 lg:self-start">
           <OrderSummary
             eventName={booking.event.name}
-            venueName={null}
-            startAt={null}
             items={summaryItems}
             totalSatang={booking.totalSatang}
           />

@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import { prisma } from "@/lib/prisma";
 import { sendPurchaseEmail } from "@/lib/email/send";
 import { generateUniqueJoinCode } from "@/lib/join-code";
-import { getLogoPngBuffer, getTicketQrPngBuffer } from "@/lib/email/assets";
+import { getLogoPngBuffer } from "@/lib/email/assets";
 import { recordAudit } from "@/lib/audit";
 
 function generateTicketNumber(): string {
@@ -80,7 +80,6 @@ export async function sendBookingPurchaseEmail(bookingId: string) {
   // shareable Table Code and the first ticket for the QR.
   const entries = [] as {
     tableCode: string;
-    qrPng: Buffer;
     ticketNumber: string;
   }[];
   for (const item of booking.items) {
@@ -88,7 +87,6 @@ export async function sendBookingPurchaseEmail(bookingId: string) {
     const ticket = item.tickets[0];
     entries.push({
       tableCode: item.joinCode,
-      qrPng: await getTicketQrPngBuffer(ticket.id),
       ticketNumber: ticket.ticketNumber,
     });
   }

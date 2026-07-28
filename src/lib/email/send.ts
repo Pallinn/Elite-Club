@@ -17,48 +17,34 @@ export async function sendResetPasswordEmail(params: {
 }
 
 /**
- * Both templates reference images via `src="cid:logo"` / `src="cid:qr-N"`.
- * Resend converts each `attachments[]` entry with a `contentId` into an inline
- * MIME part, so Gmail/Outlook/Apple Mail all render them (unlike data URIs,
- * which Gmail blocks for security).
+ * Both templates reference the logo image via `src="cid:logo"`. Resend
+ * converts the `attachments[]` entry with a `contentId` into an inline MIME
+ * part, so Gmail/Outlook/Apple Mail all render it (unlike data URIs, which
+ * Gmail blocks for security).
  */
 export async function sendPurchaseEmail(params: {
   to: string;
   logoPng: Buffer;
   tables: Array<{
     tableCode: string;
-    qrPng: Buffer;
     ticketNumber: string;
   }>;
 }) {
-  const cids = params.tables.map((_, i) => `qr-${i}`);
   await getResendClient().emails.send({
     from: EMAIL_FROM,
     to: params.to,
     subject: "Thank you for your purchase — NO SIGNAL",
     react: PurchaseEmail({
       logoCid: "cid:logo",
-      tables: params.tables.map((t, i) => ({
-        tableCode: t.tableCode,
-        qrCid: `cid:${cids[i]}`,
-        ticketNumber: t.ticketNumber,
-      })),
+      tables: params.tables,
     }),
-    attachments: [
-      { filename: "logo.png", content: params.logoPng, contentId: "logo" },
-      ...params.tables.map((t, i) => ({
-        filename: `qr-${t.ticketNumber}.png`,
-        content: t.qrPng,
-        contentId: cids[i],
-      })),
-    ],
+    attachments: [{ filename: "logo.png", content: params.logoPng, contentId: "logo" }],
   });
 }
 
 export async function sendJoinEmail(params: {
   to: string;
   logoPng: Buffer;
-  qrPng: Buffer;
   ticketNumber: string;
 }) {
   await getResendClient().emails.send({
@@ -67,12 +53,8 @@ export async function sendJoinEmail(params: {
     subject: "You're in — NO SIGNAL",
     react: JoinEmail({
       logoCid: "cid:logo",
-      qrCid: "cid:qr",
       ticketNumber: params.ticketNumber,
     }),
-    attachments: [
-      { filename: "logo.png", content: params.logoPng, contentId: "logo" },
-      { filename: `qr-${params.ticketNumber}.png`, content: params.qrPng, contentId: "qr" },
-    ],
+    attachments: [{ filename: "logo.png", content: params.logoPng, contentId: "logo" }],
   });
 }

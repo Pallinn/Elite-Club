@@ -13,7 +13,6 @@ import {
 
 export type PurchaseTableEntry = {
   tableCode: string;
-  qrCid: string;
   ticketNumber: string;
 };
 
@@ -112,27 +111,7 @@ export function PurchaseEmail({
                 CONFIRMED
               </Text>
 
-              <Text
-                style={{
-                  color: "#a3a3a3",
-                  fontSize: 11,
-                  letterSpacing: 3,
-                  margin: "28px 0 12px",
-                  textTransform: "uppercase",
-                }}
-              >
-                Table Verification QR Code
-              </Text>
-              <Img
-                src={t.qrCid}
-                alt={`QR code ${t.tableCode}`}
-                width={200}
-                style={{
-                  margin: "0 auto",
-                  backgroundColor: "#ffffff",
-                }}
-              />
-              <Text style={{ color: "#737373", fontSize: 11, margin: "8px 0 0" }}>
+              <Text style={{ color: "#737373", fontSize: 11, margin: "12px 0 0" }}>
                 {t.ticketNumber}
               </Text>
             </Section>
@@ -146,7 +125,7 @@ export function PurchaseEmail({
               marginTop: 28,
             }}
           >
-            Present this QR Code together with your Table Code for verification at the event.
+            Present your Table Code for verification at the event.
           </Text>
 
           <Hr style={{ borderColor: "#262626", margin: "32px 0 20px" }} />

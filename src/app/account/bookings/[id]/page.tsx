@@ -1,9 +1,6 @@
 import { redirect } from "next/navigation";
-import QRCode from "qrcode";
-import Image from "next/image";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { buildTicketQrPayload } from "@/lib/qr";
 import { formatSatang } from "@/lib/money";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -31,15 +28,12 @@ export default async function BookingDetailPage({
     redirect("/account/bookings");
   }
 
-  const tickets = await Promise.all(
-    booking.items.flatMap((item) =>
-      item.tickets.map(async (ticket) => ({
-        ...ticket,
-        label: item.table ? item.table.label : item.zone.name,
-        isMine: ticket.holderUserId === session.user.id,
-        qrDataUrl: await QRCode.toDataURL(buildTicketQrPayload(ticket.id)),
-      }))
-    )
+  const tickets = booking.items.flatMap((item) =>
+    item.tickets.map((ticket) => ({
+      ...ticket,
+      label: item.table ? item.table.label : item.zone.name,
+      isMine: ticket.holderUserId === session.user.id,
+    }))
   );
 
   const tableJoinCodes = booking.items.filter((item) => item.table && item.joinCode);
@@ -110,14 +104,6 @@ export default async function BookingDetailPage({
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="flex flex-col items-center gap-3">
-                  <Image
-                    src={ticket.qrDataUrl}
-                    alt={ticket.ticketNumber}
-                    width={180}
-                    height={180}
-                    unoptimized
-                    className="rounded bg-white p-2"
-                  />
                   <p className="text-xs text-neutral-400">{ticket.ticketNumber}</p>
                   <a
                     href={`/api/tickets/${ticket.id}/pdf`}

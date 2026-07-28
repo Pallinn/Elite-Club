@@ -1,43 +1,41 @@
 import { formatSatang } from "@/lib/money";
+import type { TableProvisions } from "@/lib/table-provisions";
 
 export function OrderSummary({
   eventName,
-  venueName,
-  startAt,
   items,
   totalSatang,
+  provisions,
+  footer,
 }: {
   eventName: string;
-  venueName: string | null;
-  startAt: Date | null;
   items?: { label: string; amountSatang: number }[];
   totalSatang?: number;
+  provisions?: TableProvisions;
+  footer?: React.ReactNode;
 }) {
   return (
     <div className="rounded-lg border border-white/10 bg-neutral-950 p-5">
       <p className="font-mono text-xs uppercase tracking-[0.2em] text-primary">Order summary</p>
 
-      <div
-        aria-hidden
-        className="relative mt-4 flex h-32 items-center justify-center overflow-hidden rounded"
-        style={{
-          background:
-            "radial-gradient(120% 100% at 30% 0%, oklch(0.72 0.19 55 / 30%) 0%, oklch(0.09 0 0) 60%)",
-        }}
-      >
-        <div className="absolute inset-0 bg-[linear-gradient(oklch(1_0_0/8%)_1px,transparent_1px),linear-gradient(90deg,oklch(1_0_0/8%)_1px,transparent_1px)] bg-[size:20px_20px]" />
-      </div>
-
       <h3 className="mt-4 font-heading text-base font-bold uppercase text-white">{eventName}</h3>
-      {startAt && (
-        <p className="mt-1 font-mono text-xs text-neutral-500">
-          {startAt
-            .toLocaleString("en-US", { weekday: "short", day: "2-digit", month: "short", year: "numeric" })
-            .toUpperCase()}{" "}
-          · {startAt.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false })}
-        </p>
+
+      {provisions && (
+        <dl className="mt-4 space-y-1.5 border-t border-white/10 pt-4 font-mono text-xs text-neutral-300">
+          <div className="flex justify-between">
+            <dt className="text-neutral-500">Capacity</dt>
+            <dd>{provisions.capacityRange} guests</dd>
+          </div>
+          <div className="flex justify-between">
+            <dt className="text-neutral-500">Black Label</dt>
+            <dd>x{provisions.blackLabel}</dd>
+          </div>
+          <div className="flex justify-between">
+            <dt className="text-neutral-500">Mixers</dt>
+            <dd>x{provisions.mixers}</dd>
+          </div>
+        </dl>
       )}
-      {venueName && <p className="text-sm text-neutral-400">{venueName}</p>}
 
       <div className="mt-4 space-y-2 border-t border-white/10 pt-4">
         {items && items.length > 0 ? (
@@ -65,16 +63,7 @@ export function OrderSummary({
         </div>
       )}
 
-      <div className="mt-5 flex flex-wrap gap-2">
-        {["SSL Secured", "PCI Compliant", "No Hidden Fees"].map((badge) => (
-          <span
-            key={badge}
-            className="rounded border border-white/10 px-2 py-1 font-mono text-[9px] uppercase tracking-[0.1em] text-neutral-500"
-          >
-            {badge}
-          </span>
-        ))}
-      </div>
+      {footer && <div className="mt-5">{footer}</div>}
     </div>
   );
 }
