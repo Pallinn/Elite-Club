@@ -3,8 +3,8 @@
 import { useMemo, useState } from "react";
 import useSWR from "swr";
 import { Button } from "@/components/ui/button";
-import { formatSatang } from "@/lib/money";
 import { OrderSummary } from "@/components/booking/order-summary";
+import { tableProvisions } from "@/lib/table-provisions";
 import { useReserve } from "@/components/booking/use-reserve";
 import { FloorPlanMap, type FloorTable } from "@/components/booking/floor-plan-map";
 
@@ -111,56 +111,28 @@ export function FloorPlanBooking({
             </span>
           </div>
 
-          {selectedTables.length > 0 && (
-            <div className="mt-6 space-y-2">
-              {selectedTables.map((t) => (
-                <div
-                  key={t.key}
-                  className="flex items-center justify-between rounded-lg border border-primary bg-primary/5 p-4"
-                >
-                  <div>
-                    <p className="font-heading text-base font-bold uppercase text-white">
-                      {t.label}
-                    </p>
-                    <p className="text-sm text-neutral-400">Seats up to {t.capacity}</p>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <p className="font-heading text-xl font-bold text-primary">
-                      {formatSatang(t.priceSatang)}
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => handleSelect(t)}
-                      aria-label={`Remove ${t.label}`}
-                      className="text-neutral-500 transition-colors hover:text-white"
-                    >
-                      ×
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          <Button
-            size="lg"
-            disabled={selectedTables.length === 0 || loading}
-            onClick={onContinue}
-            className="mt-6 font-mono text-sm uppercase tracking-[0.2em]"
-          >
-            {loading
-              ? "Reserving..."
-              : `Continue to details${selectedTables.length > 1 ? ` (${selectedTables.length} tables)` : ""} →`}
-          </Button>
         </div>
 
         <aside className="lg:sticky lg:top-10 lg:self-start">
           <OrderSummary
             eventName={eventName}
-            venueName={venueName}
-            startAt={new Date(startAt)}
             items={selectedTables.map((t) => ({ label: t.label, amountSatang: t.priceSatang }))}
             totalSatang={selectedTables.length > 0 ? totalSatang : undefined}
+            provisions={
+              selectedTables.length === 1 ? tableProvisions(selectedTables[0].label) : undefined
+            }
+            footer={
+              <Button
+                size="lg"
+                disabled={selectedTables.length === 0 || loading}
+                onClick={onContinue}
+                className="w-full font-mono text-sm uppercase tracking-[0.2em]"
+              >
+                {loading
+                  ? "Reserving..."
+                  : `Continue to details${selectedTables.length > 1 ? ` (${selectedTables.length} tables)` : ""} →`}
+              </Button>
+            }
           />
         </aside>
       </div>

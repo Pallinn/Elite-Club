@@ -4,7 +4,7 @@ import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { sendJoinEmail } from "@/lib/email/send";
-import { getLogoPngBuffer, getTicketQrPngBuffer } from "@/lib/email/assets";
+import { getLogoPngBuffer } from "@/lib/email/assets";
 import { recordAudit } from "@/lib/audit";
 
 const joinSchema = z.object({
@@ -73,7 +73,6 @@ export async function POST(request: Request) {
     await sendJoinEmail({
       to: session.user.email!,
       logoPng: getLogoPngBuffer(),
-      qrPng: await getTicketQrPngBuffer(ticket.id),
       ticketNumber: ticket.ticketNumber,
     });
   } catch (err) {

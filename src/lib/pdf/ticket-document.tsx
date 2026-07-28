@@ -1,4 +1,4 @@
-import { Document, Page, View, Text, Image, StyleSheet } from "@react-pdf/renderer";
+import { Document, Page, View, Text, StyleSheet } from "@react-pdf/renderer";
 
 const styles = StyleSheet.create({
   page: {
@@ -12,7 +12,6 @@ const styles = StyleSheet.create({
   row: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   ticketNumber: { fontSize: 14, marginBottom: 4 },
   zoneLabel: { fontSize: 12, color: "#d4d4d4" },
-  qr: { width: 140, height: 140 },
 });
 
 export function TicketDocument({
@@ -21,14 +20,12 @@ export function TicketDocument({
   startAt,
   ticketNumber,
   zoneLabel,
-  qrDataUrl,
 }: {
   eventName: string;
   venueName: string;
   startAt: string;
   ticketNumber: string;
   zoneLabel: string;
-  qrDataUrl: string;
 }) {
   return (
     <Document>
@@ -42,7 +39,6 @@ export function TicketDocument({
             <Text style={styles.ticketNumber}>{ticketNumber}</Text>
             <Text style={styles.zoneLabel}>{zoneLabel}</Text>
           </View>
-          <Image src={qrDataUrl} style={styles.qr} />
         </View>
       </Page>
     </Document>

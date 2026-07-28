@@ -15,14 +15,19 @@ export type FloorTable = {
   isPremium: boolean;
 };
 
-// Radius (in floor-plan pixels) calibrated to the actual Figma table sizes:
-// plain tables (cap 4) ≈ r36.5, the booth (cap 6) ≈ r63, the lounges (cap 8)
-// average ≈ r88 between Floor 1's r91.5 and Floor 2's r67. Floor 2's plain
-// VIP 1-5 tables are sized up further per request.
-function tableRadius(capacity: number, floor: 1 | 2) {
-  if (capacity <= 4) return floor === 2 ? 55 : 36.5;
-  if (capacity <= 6) return 63;
-  return 88;
+// Radius (in floor-plan pixels) calibrated to the actual Figma table sizes -
+// purely visual, traced from the artwork. Deliberately keyed off the table's
+// *drawn* size bucket rather than its bookable capacity (which can change
+// independently, e.g. for pricing/provisions), so re-tiering capacity never
+// moves or resizes a marker on the floor plan.
+// Plain tables ≈ r36.5, the booth ≈ r63, the lounges average ≈ r88 between
+// Floor 1's r91.5 and Floor 2's r67. Floor 2's plain VIP 1-5 tables are sized
+// up further per request.
+function tableRadius(label: string, floor: 1 | 2) {
+  if (/^(VVIP1|VVIP3)$/.test(label)) return 88;
+  if (label === "VVIP2") return 63;
+  if (floor === 2) return 55; // VIP 1-5
+  return 36.5; // Floor 1 numbered tables 1-16
 }
 
 // The map scales fluidly to fit any container width, so on a ~375px phone
@@ -190,7 +195,7 @@ function FloorFurniture({ layout }: { layout: FloorLayout }) {
 // drawn in between, instead of getting covered by a sofa/stool.
 function tableMarkerGeometry(table: FloorTable, floor: 1 | 2) {
   const layout = FLOOR_LAYOUTS[floor];
-  const radius = tableRadius(table.capacity, floor);
+  const radius = tableRadius(table.label, floor);
   const cx = (table.positionXPct / 100) * layout.width;
   const cy = (table.positionYPct / 100) * layout.height;
   const polygon = table.isPremium ? VVIP_ZONE_POLYGONS[`${floor}:${table.label}`] : undefined;

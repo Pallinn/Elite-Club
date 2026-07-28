@@ -13,11 +13,9 @@ import {
 
 export function JoinEmail({
   logoCid,
-  qrCid,
   ticketNumber,
 }: {
   logoCid: string;
-  qrCid: string;
   ticketNumber: string;
 }) {
   return (
@@ -70,18 +68,17 @@ export function JoinEmail({
                 textTransform: "uppercase",
               }}
             >
-              Entry QR Code
+              Ticket Number
             </Text>
-            <Img
-              src={qrCid}
-              alt={`Entry QR ${ticketNumber}`}
-              width={200}
+            <Text
               style={{
-                margin: "0 auto",
-                backgroundColor: "#ffffff",
+                color: "#f97316",
+                fontSize: 22,
+                fontWeight: 700,
+                letterSpacing: 2,
+                margin: 0,
               }}
-            />
-            <Text style={{ color: "#737373", fontSize: 11, margin: "8px 0 0" }}>
+            >
               {ticketNumber}
             </Text>
           </Section>
@@ -94,7 +91,7 @@ export function JoinEmail({
               marginTop: 28,
             }}
           >
-            Present this QR Code at the entrance for check-in.
+            Present your ticket number at the entrance for check-in.
           </Text>
 
           <Hr style={{ borderColor: "#262626", margin: "32px 0 20px" }} />

@@ -22,7 +22,7 @@ export function BookingShell({
 
   return (
     <div className="min-h-screen bg-neutral-900">
-      <header className="flex h-16 items-center justify-between border-b border-white/10 px-4 sm:px-8">
+      <header className="flex h-16 items-center justify-between border-b border-white/10 bg-black px-4 sm:px-8">
         <Link
           href={backHref}
           className="font-mono text-xs uppercase tracking-[0.2em] text-neutral-400 hover:text-white"
