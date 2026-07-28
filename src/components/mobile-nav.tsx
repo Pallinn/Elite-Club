@@ -7,6 +7,7 @@ import { Menu, X } from "lucide-react";
 const LINKS = [
   { href: "/#lineup", label: "Lineup" },
   { href: "/book", label: "Book" },
+  { href: "/connect", label: "Connect" },
 ];
 
 export function MobileNav() {
@@ -37,12 +38,6 @@ export function MobileNav() {
                 {link.label}
               </Link>
             ))}
-            <span className="flex cursor-not-allowed items-center gap-1.5 px-3 py-3 text-neutral-600">
-              Connect
-              <span className="rounded border border-white/10 px-1 py-0.5 text-[9px] text-neutral-500">
-                Soon
-              </span>
-            </span>
           </nav>
         </div>
       )}
