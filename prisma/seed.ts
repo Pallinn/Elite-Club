@@ -169,11 +169,11 @@ async function main() {
   // design (per team ops); the username differentiates the audit trail.
   const teamAdminPasswordHash = await bcrypt.hash("elite_q", 12);
   const teamAdmins = [
-    { email: "elite_pan@elite.local", name: "Pan" },
-    { email: "elite_gong@elite.local", name: "Gong" },
-    { email: "elite_japam@elite.local", name: "Japam" },
-    { email: "elite_lin@elite.local", name: "Lin" },
-    { email: "elite_c@elite.local", name: "C" },
+    { email: "elite_pan@gmail.com", name: "Pan" },
+    { email: "elite_gong@gmail.com", name: "Gong" },
+    { email: "elite_japam@gmail.com", name: "Japam" },
+    { email: "elite_lin@gmail.com", name: "Lin" },
+    { email: "elite_c@gmail.com", name: "C" },
   ];
   for (const a of teamAdmins) {
     const fields = {
