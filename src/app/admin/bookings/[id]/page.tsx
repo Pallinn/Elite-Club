@@ -3,6 +3,9 @@ import { prisma } from "@/lib/prisma";
 import { formatSatang } from "@/lib/money";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { AdminBookingActions } from "@/components/admin/booking-actions";
+
+export const dynamic = "force-dynamic";
 
 export default async function AdminBookingDetailPage({
   params,
@@ -30,7 +33,16 @@ export default async function AdminBookingDetailPage({
           <h1 className="text-xl font-semibold text-white">{booking.contactName}</h1>
           <p className="text-sm text-neutral-400">{booking.contactEmail}</p>
         </div>
-        <Badge variant={booking.status === "PAID" ? "default" : "secondary"}>{booking.status}</Badge>
+        <div className="flex items-center gap-3">
+          <Badge variant={booking.status === "PAID" ? "default" : "secondary"}>{booking.status}</Badge>
+          <AdminBookingActions
+            bookingId={booking.id}
+            status={booking.status}
+            contactName={booking.contactName}
+            totalSatang={booking.totalSatang}
+            itemLabels={booking.items.map((i) => i.table?.label ?? `${i.zone.name} x${i.quantity}`)}
+          />
+        </div>
       </div>
 
       <Card className="border-white/10 bg-neutral-950">
@@ -67,10 +79,17 @@ export default async function AdminBookingDetailPage({
             <p className="text-sm text-neutral-500">No payment attempts yet.</p>
           )}
           {booking.payments.map((payment) => (
-            <div key={payment.id} className="flex items-center justify-between text-sm text-neutral-300">
-              <span>
-                {payment.method} &middot; {payment.createdAt.toLocaleString()}
-              </span>
+            <div key={payment.id} className="flex items-center justify-between border-t border-white/5 pt-2 text-sm text-neutral-300 first:border-0 first:pt-0">
+              <div>
+                <p>
+                  {payment.method} &middot; {payment.createdAt.toLocaleString()}
+                </p>
+                {payment.slipTransRef && (
+                  <p className="mt-0.5 font-mono text-xs text-neutral-500">
+                    Tracking no. {payment.slipTransRef}
+                  </p>
+                )}
+              </div>
               <Badge variant={payment.status === "SUCCEEDED" ? "default" : "secondary"}>
                 {payment.status}
               </Badge>

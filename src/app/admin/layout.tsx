@@ -7,8 +7,10 @@ import { HomeIcon } from "lucide-react";
 const NAV = [
   { href: "/admin", label: "Overview" },
   { href: "/admin/reservations", label: "Reservations" },
+  { href: "/admin/bookings", label: "Bookings" },
   { href: "/admin/tables", label: "Tables" },
   { href: "/admin/checkin", label: "Check-in" },
+  { href: "/admin/users", label: "Users" },
   { href: "/admin/logs", label: "Activity log" },
 ];
 

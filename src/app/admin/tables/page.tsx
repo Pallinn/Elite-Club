@@ -43,6 +43,7 @@ export default async function AdminTablesPage() {
         isPremium: /vvip/i.test(zone.name),
         tier: tierOf(zone.name),
         bookingItemId: item?.id ?? null,
+        joinCode: item?.joinCode ?? null,
         paidStatus: item?.booking.status ?? null,
         tickets: item
           ? item.tickets.map((t) => ({

@@ -63,6 +63,7 @@ export default async function AdminBookingsPage({
           <option value="EXPIRED">Expired</option>
           <option value="CANCELLED">Cancelled</option>
           <option value="FAILED">Failed</option>
+          <option value="REFUNDED">Refunded</option>
         </select>
         <button
           type="submit"

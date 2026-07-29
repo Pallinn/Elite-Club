@@ -18,7 +18,7 @@ export type ReservationRow = {
   joinCode: string | null;
   ticketCount: number;
   capacity: number;
-  paidStatus: "PAID" | "HOLD" | "EXPIRED" | "CANCELLED" | "FAILED";
+  paidStatus: "PAID" | "HOLD" | "EXPIRED" | "CANCELLED" | "FAILED" | "REFUNDED";
   totalSatang: number;
   createdAt: string;
 };
@@ -29,6 +29,7 @@ const STATUS_TINT: Record<ReservationRow["paidStatus"], string> = {
   EXPIRED: "text-neutral-500 border-neutral-600",
   CANCELLED: "text-neutral-500 border-neutral-600",
   FAILED: "text-red-400 border-red-400/40",
+  REFUNDED: "text-red-400 border-red-400/40",
 };
 
 export function ReservationsTable({ rows }: { rows: ReservationRow[] }) {

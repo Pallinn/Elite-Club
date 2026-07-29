@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { DoubleConfirmDialog } from "@/components/admin/double-confirm-dialog";
 import { formatSatang } from "@/lib/money";
 import { toast } from "sonner";
 import { TableRoster, type RosterTicket } from "@/components/admin/table-roster";
@@ -16,7 +17,7 @@ export type ReservationDetailData = {
   capacity: number;
   totalSatang: number;
   joinCode: string | null;
-  paidStatus: "PAID" | "HOLD" | "EXPIRED" | "CANCELLED" | "FAILED";
+  paidStatus: "PAID" | "HOLD" | "EXPIRED" | "CANCELLED" | "FAILED" | "REFUNDED";
   buyer: { name: string; email: string };
   tickets: RosterTicket[];
   payments: Array<{
@@ -25,12 +26,28 @@ export type ReservationDetailData = {
     method: string;
     amountSatang: number;
     createdAt: string;
+    slipTransRef: string | null;
   }>;
 };
 
 export function ReservationDetail({ data }: { data: ReservationDetailData }) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
+  const [refundOpen, setRefundOpen] = useState(false);
+
+  async function refund() {
+    setBusy("refund");
+    try {
+      const res = await fetch(`/api/admin/bookings/${data.bookingId}/refund`, { method: "POST" });
+      const j = await res.json();
+      if (!res.ok) return toast.error(j.error ?? "Failed to refund.");
+      toast.success("Booking refunded — table freed and tickets voided.");
+      setRefundOpen(false);
+      router.refresh();
+    } finally {
+      setBusy(null);
+    }
+  }
 
   async function verifyPayment() {
     if (!confirm("Mark this booking as paid and mint tickets? Use only if payment arrived offline.")) return;
@@ -73,7 +90,9 @@ export function ReservationDetail({ data }: { data: ReservationDetailData }) {
                   ? "border-emerald-400/40 text-emerald-400"
                   : data.paidStatus === "HOLD"
                     ? "border-amber-400/40 text-amber-400"
-                    : "border-neutral-600 text-neutral-500"
+                    : data.paidStatus === "REFUNDED"
+                      ? "border-red-400/40 text-red-400"
+                      : "border-neutral-600 text-neutral-500"
               }`}
             >
               {data.paidStatus}
@@ -108,6 +127,28 @@ export function ReservationDetail({ data }: { data: ReservationDetailData }) {
             {busy === "verify" ? "Verifying…" : "Verify payment (mark paid)"}
           </Button>
         )}
+
+        {data.paidStatus === "PAID" && (
+          <>
+            <Button
+              variant="outline"
+              onClick={() => setRefundOpen(true)}
+              className="mt-6 border-red-500/40 font-mono text-xs uppercase tracking-[0.15em] text-red-400 hover:bg-red-500/10"
+            >
+              Refund
+            </Button>
+            <DoubleConfirmDialog
+              open={refundOpen}
+              onOpenChange={setRefundOpen}
+              title="Refund this table?"
+              description={`${data.buyer.name} — ${data.tableLabel} — ${formatSatang(data.totalSatang)}. This immediately frees the table for resale and voids every ticket on it.`}
+              confirmLabel="Yes, refund"
+              danger
+              busy={busy === "refund"}
+              onConfirm={refund}
+            />
+          </>
+        )}
       </div>
 
       {/* Payments */}
@@ -118,22 +159,29 @@ export function ReservationDetail({ data }: { data: ReservationDetailData }) {
           </h3>
           <ul className="space-y-2 text-sm">
             {data.payments.map((p) => (
-              <li key={p.id} className="flex justify-between border-t border-white/5 pt-2 first:border-0 first:pt-0">
-                <span className="text-neutral-400">
-                  {p.method} — {new Date(p.createdAt).toLocaleString()}
-                </span>
-                <span
-                  className={
-                    p.status === "SUCCEEDED"
-                      ? "text-emerald-400"
-                      : p.status === "FAILED"
-                        ? "text-red-400"
-                        : "text-amber-400"
-                  }
-                >
-                  {p.status}
-                </span>
-                <span className="text-white">{formatSatang(p.amountSatang)}</span>
+              <li key={p.id} className="border-t border-white/5 pt-2 first:border-0 first:pt-0">
+                <div className="flex justify-between">
+                  <span className="text-neutral-400">
+                    {p.method} — {new Date(p.createdAt).toLocaleString()}
+                  </span>
+                  <span
+                    className={
+                      p.status === "SUCCEEDED"
+                        ? "text-emerald-400"
+                        : p.status === "FAILED"
+                          ? "text-red-400"
+                          : "text-amber-400"
+                    }
+                  >
+                    {p.status}
+                  </span>
+                  <span className="text-white">{formatSatang(p.amountSatang)}</span>
+                </div>
+                {p.slipTransRef && (
+                  <p className="mt-0.5 font-mono text-xs text-neutral-500">
+                    Tracking no. {p.slipTransRef}
+                  </p>
+                )}
               </li>
             ))}
           </ul>

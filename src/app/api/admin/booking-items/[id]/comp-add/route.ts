@@ -4,6 +4,9 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin-auth";
 import { recordAudit } from "@/lib/audit";
+import { findAttendanceConflict } from "@/lib/table-membership";
+import { sendJoinEmail } from "@/lib/email/send";
+import { getLogoPngBuffer } from "@/lib/email/assets";
 
 const schema = z.object({ email: z.email() });
 
@@ -48,6 +51,18 @@ export async function POST(request: Request, ctx: { params: Promise<{ id: string
     return NextResponse.json({ error: "That user already has a ticket on this table." }, { status: 409 });
   }
 
+  const conflict = await findAttendanceConflict(prisma, {
+    userId: user.id,
+    eventId: item.booking.eventId,
+    excludeTableId: item.table.id,
+  });
+  if (conflict) {
+    return NextResponse.json(
+      { error: `This person already has a ticket for ${conflict.tableLabel}. One table per person.` },
+      { status: 409 }
+    );
+  }
+
   const ticket = await prisma.ticket.create({
     data: {
       bookingItemId: item.id,
@@ -69,6 +84,19 @@ export async function POST(request: Request, ctx: { params: Promise<{ id: string
       grantedTo: { id: user.id, email: user.email },
     },
   });
+
+  if (item.joinCode) {
+    try {
+      await sendJoinEmail({
+        to: user.email,
+        logoPng: getLogoPngBuffer(),
+        tableNumber: item.table.label,
+        tableCode: item.joinCode,
+      });
+    } catch (err) {
+      console.error(`Failed to send join-ticket email for comp ticket ${ticket.id}:`, err);
+    }
+  }
 
   return NextResponse.json({ ok: true, ticket });
 }

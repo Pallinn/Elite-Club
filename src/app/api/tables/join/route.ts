@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { sendJoinEmail } from "@/lib/email/send";
 import { getLogoPngBuffer } from "@/lib/email/assets";
 import { recordAudit } from "@/lib/audit";
+import { findAttendanceConflict } from "@/lib/table-membership";
 
 const joinSchema = z.object({
   code: z.string().trim().min(1),
@@ -30,55 +31,102 @@ export async function POST(request: Request) {
 
   const code = parsed.data.code.toUpperCase().replace(/\s+/g, "");
 
-  const item = await prisma.bookingItem.findUnique({
-    where: { joinCode: code },
-    include: { table: true, tickets: true, booking: { include: { event: true } } },
-  });
-
-  if (!item || !item.table || item.booking.status !== "PAID") {
-    return NextResponse.json({ error: "That code doesn't match any table." }, { status: 404 });
-  }
-
-  const existingTicket = item.tickets.find((t) => t.holderUserId === session.user.id);
-  if (existingTicket) {
-    return NextResponse.json({ ticketId: existingTicket.id, alreadyJoined: true });
-  }
-
-  if (item.tickets.length >= item.table.capacity) {
-    return NextResponse.json({ error: `${item.table.label} is already full.` }, { status: 409 });
-  }
-
-  const ticket = await prisma.ticket.create({
-    data: {
-      bookingItemId: item.id,
-      ticketNumber: generateTicketNumber(),
-      holderUserId: session.user.id,
-    },
-  });
-
-  await recordAudit({
-    actorUserId: session.user.id,
-    actorLabel: session.user.name ?? session.user.email ?? null,
-    action: "ticket.join_redeemed",
-    entityType: "Ticket",
-    entityId: ticket.id,
-    metadata: {
-      tableLabel: item.table.label,
-      joinCode: code,
-      bookingItemId: item.id,
-    },
-  });
-
   try {
-    await sendJoinEmail({
-      to: session.user.email!,
-      logoPng: getLogoPngBuffer(),
-      tableNumber: item.table.label,
-      tableCode: code,
-    });
-  } catch (err) {
-    console.error(`Failed to send join-ticket email for ticket ${ticket.id}:`, err);
-  }
+    const result = await prisma.$transaction(async (tx) => {
+      const item = await tx.bookingItem.findUnique({
+        where: { joinCode: code },
+        include: { table: true, tickets: true, booking: true },
+      });
 
-  return NextResponse.json({ ticketId: ticket.id, alreadyJoined: false });
+      if (!item || !item.table || item.booking.status !== "PAID") {
+        throw new JoinError("That code doesn't match any table.", 404);
+      }
+
+      const existingTicket = item.tickets.find((t) => t.holderUserId === session.user.id);
+      if (existingTicket) {
+        return {
+          ticketId: existingTicket.id,
+          alreadyJoined: true,
+          tableLabel: item.table.label,
+          bookingItemId: item.id,
+        };
+      }
+
+      // Lock the table row so two simultaneous joins can't both slip past the
+      // capacity check below.
+      await tx.$queryRaw`SELECT id FROM "Table" WHERE id = ${item.table.id} FOR UPDATE`;
+
+      const currentTicketCount = await tx.ticket.count({ where: { bookingItemId: item.id } });
+      if (currentTicketCount >= item.table.capacity) {
+        throw new JoinError(`${item.table.label} is already full.`, 409);
+      }
+
+      const conflict = await findAttendanceConflict(tx, {
+        userId: session.user.id,
+        eventId: item.booking.eventId,
+        excludeTableId: item.table.id,
+      });
+      if (conflict) {
+        throw new JoinError(
+          `You already have a ticket for ${conflict.tableLabel}. Only one table per person.`
+        );
+      }
+
+      const ticket = await tx.ticket.create({
+        data: {
+          bookingItemId: item.id,
+          ticketNumber: generateTicketNumber(),
+          holderUserId: session.user.id,
+        },
+      });
+
+      return {
+        ticketId: ticket.id,
+        alreadyJoined: false,
+        tableLabel: item.table.label,
+        bookingItemId: item.id,
+      };
+    });
+
+    if (!result.alreadyJoined) {
+      await recordAudit({
+        actorUserId: session.user.id,
+        actorLabel: session.user.name ?? session.user.email ?? null,
+        action: "ticket.join_redeemed",
+        entityType: "Ticket",
+        entityId: result.ticketId,
+        metadata: {
+          tableLabel: result.tableLabel,
+          joinCode: code,
+          bookingItemId: result.bookingItemId,
+        },
+      });
+
+      try {
+        await sendJoinEmail({
+          to: session.user.email!,
+          logoPng: getLogoPngBuffer(),
+          tableNumber: result.tableLabel,
+          tableCode: code,
+        });
+      } catch (err) {
+        console.error(`Failed to send join-ticket email for ticket ${result.ticketId}:`, err);
+      }
+    }
+
+    return NextResponse.json({ ticketId: result.ticketId, alreadyJoined: result.alreadyJoined });
+  } catch (err) {
+    if (err instanceof JoinError) {
+      return NextResponse.json({ error: err.message }, { status: err.status });
+    }
+    throw err;
+  }
+}
+
+class JoinError extends Error {
+  status: number;
+  constructor(message: string, status = 409) {
+    super(message);
+    this.status = status;
+  }
 }

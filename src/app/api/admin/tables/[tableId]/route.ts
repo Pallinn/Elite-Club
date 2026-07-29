@@ -38,6 +38,18 @@ export async function PATCH(request: Request, ctx: { params: Promise<{ tableId: 
     }
   }
 
+  if (parsed.data.isLocked === false) {
+    const paidItem = await prisma.bookingItem.findFirst({
+      where: { isActive: true, tableId, booking: { status: "PAID" } },
+    });
+    if (paidItem) {
+      return NextResponse.json(
+        { error: "This table has a paid reservation — refund it before unlocking." },
+        { status: 409 }
+      );
+    }
+  }
+
   const updated = await prisma.table.update({
     where: { id: tableId  },
     data: parsed.data,

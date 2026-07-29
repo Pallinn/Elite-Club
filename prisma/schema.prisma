@@ -197,6 +197,7 @@ enum BookingStatus {
   EXPIRED
   CANCELLED
   FAILED
+  REFUNDED
 }
 
 model BookingItem {

@@ -4,10 +4,24 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Badge } from "@/components/ui/badge";
 import { formatSatang } from "@/lib/money";
+import { CancelHoldButton } from "@/components/account/cancel-hold-button";
+import { expireStaleHolds } from "@/lib/expire-holds";
+import { recordAudit } from "@/lib/audit";
+
+export const dynamic = "force-dynamic";
 
 export default async function MyBookingsPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
+
+  // Availability reads already treat a lapsed hold as inactive (see
+  // activeBookingItemFilter), but the row itself only flips to EXPIRED when
+  // something actually touches it - without this, a user's own stale hold
+  // would keep showing as "HOLD" here until they happened to click into it.
+  const expiredIds = await expireStaleHolds(prisma, { userId: session.user.id });
+  for (const id of expiredIds) {
+    await recordAudit({ action: "booking.expired", entityType: "Booking", entityId: id, actorLabel: "system" });
+  }
 
   const bookings = await prisma.booking.findMany({
     where: { userId: session.user.id },
@@ -72,6 +86,7 @@ export default async function MyBookingsPage() {
                   >
                     {booking.status}
                   </Badge>
+                  {booking.status === "HOLD" && <CancelHoldButton bookingId={booking.id} />}
                 </div>
               </div>
             </Link>

@@ -16,6 +16,7 @@ type RosterEntry = {
 };
 
 type TableLookup = {
+  joinCode: string | null;
   tableLabel: string;
   tier: Tier;
   capacity: number;
@@ -24,25 +25,32 @@ type TableLookup = {
 };
 
 export function TableCodeCheckin() {
-  const [code, setCode] = useState("");
+  const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
+  const [results, setResults] = useState<TableLookup[] | null>(null);
   const [table, setTable] = useState<TableLookup | null>(null);
   const [checkingInId, setCheckingInId] = useState<string | null>(null);
   const [checkedInCount, setCheckedInCount] = useState(0);
 
-  async function lookup(e?: React.FormEvent) {
+  async function search(e?: React.FormEvent) {
     e?.preventDefault();
-    if (!code.trim()) return;
+    if (!query.trim()) return;
     setLoading(true);
     setTable(null);
+    setResults(null);
     try {
-      const res = await fetch(`/api/admin/checkin/lookup?code=${encodeURIComponent(code.trim())}`);
+      const res = await fetch(`/api/admin/checkin/search?q=${encodeURIComponent(query.trim())}`);
       const j = await res.json();
       if (!res.ok) {
-        toast.error(j.error ?? "Table not found.");
+        toast.error(j.error ?? "Nothing found.");
         return;
       }
-      setTable(j);
+      const found: TableLookup[] = j.results;
+      if (found.length === 1) {
+        setTable(found[0]);
+      } else {
+        setResults(found);
+      }
     } catch {
       toast.error("Network error.");
     } finally {
@@ -82,18 +90,44 @@ export function TableCodeCheckin() {
         Checked in this session: {checkedInCount}
       </p>
 
-      <form onSubmit={lookup} className="flex gap-2">
+      <form onSubmit={search} className="flex gap-2">
         <Input
-          value={code}
-          onChange={(e) => setCode(e.target.value.toUpperCase())}
-          placeholder="Enter table code (e.g. A1B2C3)"
-          className="border-white/10 bg-neutral-950 font-mono uppercase tracking-[0.2em]"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Name, table number, or table code"
+          className="border-white/10 bg-neutral-950"
           autoFocus
         />
-        <Button type="submit" disabled={loading || !code.trim()} className="shrink-0 font-mono text-xs uppercase tracking-[0.15em]">
-          {loading ? "Looking up…" : "Find table"}
+        <Button type="submit" disabled={loading || !query.trim()} className="shrink-0 font-mono text-xs uppercase tracking-[0.15em]">
+          {loading ? "Searching…" : "Search"}
         </Button>
       </form>
+
+      {results && results.length > 1 && (
+        <div className="space-y-2">
+          <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-neutral-500">
+            {results.length} tables match — pick one
+          </p>
+          {results.map((r) => (
+            <button
+              key={r.joinCode ?? r.tableLabel}
+              onClick={() => {
+                setTable(r);
+                setResults(null);
+              }}
+              className="flex w-full items-center justify-between rounded-lg border border-white/10 bg-neutral-950 p-3 text-left text-sm hover:border-white/30"
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-white">{r.tableLabel}</span>
+                <span className={`rounded border px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.15em] ${TIER_BADGE_CLASS[r.tier]}`}>
+                  {r.tier}
+                </span>
+              </div>
+              <span className="text-neutral-500">{r.contactName}</span>
+            </button>
+          ))}
+        </div>
+      )}
 
       {table && (
         <div className="rounded-lg border border-white/10 bg-neutral-950 p-5">

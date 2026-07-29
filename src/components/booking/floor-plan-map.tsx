@@ -9,6 +9,7 @@ export type FloorTable = {
   capacity: number;
   priceSatang: number;
   isBooked: boolean;
+  isLocked: boolean;
   floor: 1 | 2;
   positionXPct: number;
   positionYPct: number;
@@ -292,6 +293,10 @@ function TableMarker({
   dimmed?: boolean;
 }) {
   const { radius, cx, cy, polygon, labelPos } = tableMarkerGeometry(table, floor);
+  // Locked tables read the same as booked ones here - both are unavailable
+  // to a customer, just for different reasons (staff-blocked vs actually
+  // sold). The aside/aria-label spell out which one applies.
+  const unavailable = table.isBooked || table.isLocked;
   // Regular tables read as the same solid maroon/red circle. A VVIP/VVIP-
   // lounge zone instead draws two layers: the whole room outline tinted a
   // translucent white "zone" wash, plus a small solid badge - sized to just
@@ -302,28 +307,28 @@ function TableMarker({
   // from every other available one.
   const fill = dimmed
     ? "oklch(0.32 0 0)"
-    : table.isBooked
+    : unavailable
       ? "oklch(0.3 0 0)"
       : isSelected
         ? "oklch(0.65 0.2 145)"
         : "oklch(0.72 0.19 55)";
   const stroke = dimmed
     ? "oklch(0.45 0 0)"
-    : table.isBooked
+    : unavailable
       ? "oklch(0.4 0 0)"
       : isSelected
         ? "oklch(0.5 0.2 145)"
         : "oklch(0.55 0.19 55)";
   const zoneFill = dimmed
     ? "oklch(0.32 0 0 / 40%)"
-    : table.isBooked
+    : unavailable
       ? "oklch(0.3 0 0 / 40%)"
       : isSelected
         ? "oklch(0.65 0.2 145 / 50%)"
         : "oklch(1 0 0 / 50%)";
   const zoneStroke = dimmed
     ? "oklch(0.45 0 0 / 60%)"
-    : table.isBooked
+    : unavailable
       ? "oklch(0.4 0 0 / 60%)"
       : isSelected
         ? "oklch(0.5 0.2 145 / 80%)"
@@ -343,9 +348,15 @@ function TableMarker({
   return (
     <g
       role={interactive ? "button" : undefined}
-      aria-label={interactive ? `${table.label}, seats ${table.capacity}${table.isBooked ? ", sold out" : ""}` : undefined}
-      onClick={interactive ? () => (selectableWhenBooked || !table.isBooked) && onSelect(table) : undefined}
-      style={{ cursor: interactive ? (!selectableWhenBooked && table.isBooked ? "not-allowed" : "pointer") : undefined }}
+      aria-label={
+        interactive
+          ? `${table.label}, seats ${table.capacity}${
+              table.isBooked ? ", sold out" : table.isLocked ? ", unavailable" : ""
+            }`
+          : undefined
+      }
+      onClick={interactive ? () => (selectableWhenBooked || !unavailable) && onSelect(table) : undefined}
+      style={{ cursor: interactive ? (!selectableWhenBooked && unavailable ? "not-allowed" : "pointer") : undefined }}
     >
       {polygon ? (
         <>
@@ -389,7 +400,7 @@ function TableLabel({ table, floor, dimmed = false }: { table: FloorTable; floor
     <text
       x={labelPos.x}
       y={labelPos.y}
-      fill={dimmed ? "oklch(0.62 0 0)" : table.isBooked ? "oklch(0.5 0 0)" : "oklch(0.97 0 0)"}
+      fill={dimmed ? "oklch(0.62 0 0)" : table.isBooked || table.isLocked ? "oklch(0.5 0 0)" : "oklch(0.97 0 0)"}
       fontSize={polygon ? 24 : Math.min(radius * 0.42, 22)}
       textAnchor="middle"
       dominantBaseline="middle"

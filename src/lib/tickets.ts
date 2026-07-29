@@ -4,6 +4,7 @@ import { sendPurchaseEmail } from "@/lib/email/send";
 import { generateUniqueJoinCode } from "@/lib/join-code";
 import { getLogoPngBuffer } from "@/lib/email/assets";
 import { recordAudit } from "@/lib/audit";
+import { findAttendanceConflict } from "@/lib/table-membership";
 
 function generateTicketNumber(): string {
   const random = crypto.randomBytes(4).toString("hex").toUpperCase();
@@ -31,16 +32,39 @@ export async function finalizeBookingPayment(bookingId: string) {
 
     for (const item of booking.items) {
       if (item.tickets.length === 0) {
-        const ticketsToCreate = Array.from({ length: item.quantity }, () => ({
-          bookingItemId: item.id,
-          ticketNumber: generateTicketNumber(),
-          holderUserId: booking.userId,
-        }));
-        await tx.ticket.createMany({ data: ticketsToCreate });
+        if (item.tableId) {
+          // A buyer only gets auto-seated on the first table they're
+          // attending this event - buying a second table makes them its
+          // owner/manager (gets the join code below) without occupying a
+          // seat there themselves, so capacity isn't wasted double-counting
+          // one person in two places.
+          const conflict = await findAttendanceConflict(tx, {
+            userId: booking.userId,
+            eventId: booking.eventId,
+            excludeTableId: item.tableId,
+          });
+          if (!conflict) {
+            await tx.ticket.create({
+              data: {
+                bookingItemId: item.id,
+                ticketNumber: generateTicketNumber(),
+                holderUserId: booking.userId,
+              },
+            });
+          }
+        } else {
+          const ticketsToCreate = Array.from({ length: item.quantity }, () => ({
+            bookingItemId: item.id,
+            ticketNumber: generateTicketNumber(),
+            holderUserId: booking.userId,
+          }));
+          await tx.ticket.createMany({ data: ticketsToCreate });
+        }
       }
 
       // Each VIP table gets a shareable join code once paid, so friends can
-      // redeem it for their own ticket to the same table.
+      // redeem it for their own ticket to the same table - whether or not
+      // the buyer themselves got auto-seated on it.
       if (item.tableId && !item.joinCode) {
         const joinCode = await generateUniqueJoinCode(tx);
         await tx.bookingItem.update({ where: { id: item.id }, data: { joinCode } });
@@ -77,17 +101,18 @@ export async function sendBookingPurchaseEmail(bookingId: string) {
   if (!booking) return;
 
   // Build one "table entry" per table item, using the item's join code as the
-  // shareable Table Code and the first ticket for the QR.
+  // shareable Table Code. The email doesn't render a personal QR - ticketNumber
+  // is only used as a React key - so an owner-only table (buyer not auto-seated,
+  // see finalizeBookingPayment) still gets its own confirmation entry.
   const entries = [] as {
     tableCode: string;
     ticketNumber: string;
   }[];
   for (const item of booking.items) {
-    if (!item.table || !item.joinCode || item.tickets.length === 0) continue;
-    const ticket = item.tickets[0];
+    if (!item.table || !item.joinCode) continue;
     entries.push({
       tableCode: item.joinCode,
-      ticketNumber: ticket.ticketNumber,
+      ticketNumber: item.tickets[0]?.ticketNumber ?? item.id,
     });
   }
   if (entries.length === 0) return;

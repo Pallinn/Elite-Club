@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { createHoldSchema } from "@/lib/validators/booking";
 import { activeBookingItemFilter } from "@/lib/availability";
 import { expireStaleHolds } from "@/lib/expire-holds";
+import { hasActiveHold } from "@/lib/table-membership";
 import { recordAudit } from "@/lib/audit";
 
 const HOLD_TTL_MINUTES = 15;
@@ -45,6 +46,7 @@ export async function POST(request: Request) {
         unitPriceSatang: number;
         subtotalSatang: number;
       }[] = [];
+      const requestedTableIds = new Set<string>();
 
       for (const item of parsed.data.items) {
         const zone = await tx.zone.findUnique({ where: { id: item.zoneId } });
@@ -66,6 +68,21 @@ export async function POST(request: Request) {
           if (table.isLocked) {
             throw new HoldConflictError(`${table.label} is currently locked by staff.`);
           }
+
+          if (requestedTableIds.has(table.id)) {
+            throw new HoldConflictError(`${table.label} was already selected in this request.`);
+          }
+
+          const activeHold = await hasActiveHold(tx, {
+            userId: session.user.id,
+            eventId: event.id,
+          });
+          if (activeHold) {
+            throw new HoldConflictError(
+              `You already have a reservation for ${activeHold.tableLabel} in progress. Finish or cancel it before starting another.`
+            );
+          }
+          requestedTableIds.add(table.id);
 
           // Flip any stale hold on this table to EXPIRED now, rather than waiting
           // on the cron sweep - the partial unique index below enforces isActive

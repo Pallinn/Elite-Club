@@ -30,7 +30,7 @@ export function TableRoster({
 }: {
   bookingItemId: string;
   capacity: number;
-  paidStatus: "PAID" | "HOLD" | "EXPIRED" | "CANCELLED" | "FAILED";
+  paidStatus: "PAID" | "HOLD" | "EXPIRED" | "CANCELLED" | "FAILED" | "REFUNDED";
   tickets: RosterTicket[];
 }) {
   const router = useRouter();

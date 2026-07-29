@@ -12,10 +12,10 @@ import { TableRoster, type RosterTicket } from "@/components/admin/table-roster"
 import { TIER_BADGE_CLASS, type Tier } from "@/lib/tiers";
 
 export type AdminTable = FloorTable & {
-  isLocked: boolean;
   tier: Tier;
   bookingItemId: string | null;
-  paidStatus: "PAID" | "HOLD" | "EXPIRED" | "CANCELLED" | "FAILED" | null;
+  joinCode: string | null;
+  paidStatus: "PAID" | "HOLD" | "EXPIRED" | "CANCELLED" | "FAILED" | "REFUNDED" | null;
   tickets: RosterTicket[];
 };
 
@@ -26,6 +26,10 @@ export function TableManager({ tables }: { tables: AdminTable[] }) {
   const [priceInput, setPriceInput] = useState("");
   const [capacityInput, setCapacityInput] = useState("");
   const [busy, setBusy] = useState(false);
+  const [buyerName, setBuyerName] = useState("");
+  const [buyerEmail, setBuyerEmail] = useState("");
+  const [buyerPhone, setBuyerPhone] = useState("");
+  const [markingPaid, setMarkingPaid] = useState(false);
 
   const selected = tables.find((t) => t.key === selectedKey) ?? null;
   const floorTables = tables.filter((t) => t.floor === floor);
@@ -41,6 +45,9 @@ export function TableManager({ tables }: { tables: AdminTable[] }) {
       setPriceInput(String(Math.floor(full.priceSatang / 100)));
       setCapacityInput(String(full.capacity));
     }
+    setBuyerName("");
+    setBuyerEmail("");
+    setBuyerPhone("");
   }
 
   async function patch(body: Record<string, unknown>) {
@@ -72,6 +79,34 @@ export function TableManager({ tables }: { tables: AdminTable[] }) {
       return;
     }
     await patch({ priceSatang: priceBaht * 100, capacity });
+  }
+
+  async function markAsPaid() {
+    if (!selected || !buyerEmail || !buyerName) return;
+    if (
+      !confirm(
+        `Mark ${selected.label} as paid for ${buyerName} <${buyerEmail}>? This creates a real booking and sends them a confirmation email.`
+      )
+    ) {
+      return;
+    }
+    setMarkingPaid(true);
+    try {
+      const res = await fetch(`/api/admin/tables/${selected.tableId}/mark-paid`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: buyerName, email: buyerEmail, phone: buyerPhone }),
+      });
+      const j = await res.json();
+      if (!res.ok) {
+        toast.error(j.error ?? "Couldn't mark this table as paid.");
+        return;
+      }
+      toast.success("Table marked as paid.");
+      router.refresh();
+    } finally {
+      setMarkingPaid(false);
+    }
   }
 
   return (
@@ -137,12 +172,24 @@ export function TableManager({ tables }: { tables: AdminTable[] }) {
             </div>
 
             {selected.isBooked && selected.bookingItemId ? (
-              <TableRoster
-                bookingItemId={selected.bookingItemId}
-                capacity={selected.capacity}
-                paidStatus={selected.paidStatus ?? "PAID"}
-                tickets={selected.tickets}
-              />
+              <>
+                {selected.joinCode && (
+                  <div>
+                    <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-neutral-500">
+                      Table code
+                    </p>
+                    <p className="mt-1 font-mono text-2xl font-bold tracking-[0.3em] text-orange-500">
+                      {selected.joinCode}
+                    </p>
+                  </div>
+                )}
+                <TableRoster
+                  bookingItemId={selected.bookingItemId}
+                  capacity={selected.capacity}
+                  paidStatus={selected.paidStatus ?? "PAID"}
+                  tickets={selected.tickets}
+                />
+              </>
             ) : (
               <>
                 <div className="space-y-2">
@@ -182,25 +229,73 @@ export function TableManager({ tables }: { tables: AdminTable[] }) {
                 >
                   {busy ? "Saving…" : "Save changes"}
                 </Button>
+
+                <div className="space-y-3 border-t border-white/10 pt-4">
+                  <div>
+                    <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-neutral-500">
+                      Mark as paid (manual)
+                    </p>
+                    <p className="mt-1 text-xs text-neutral-500">
+                      For when payment arrived offline or the checkout flow broke. The buyer must
+                      already have a No Signal account. This mints their ticket, generates the table
+                      code, and sends the purchase email exactly like a normal purchase.
+                    </p>
+                  </div>
+                  <Input
+                    placeholder="Buyer full name"
+                    value={buyerName}
+                    onChange={(e) => setBuyerName(e.target.value)}
+                    className="border-white/10 bg-black/60"
+                  />
+                  <Input
+                    type="email"
+                    placeholder="buyer@example.com"
+                    value={buyerEmail}
+                    onChange={(e) => setBuyerEmail(e.target.value)}
+                    className="border-white/10 bg-black/60"
+                  />
+                  <Input
+                    placeholder="Phone (optional)"
+                    value={buyerPhone}
+                    onChange={(e) => setBuyerPhone(e.target.value)}
+                    className="border-white/10 bg-black/60"
+                  />
+                  <Button
+                    onClick={markAsPaid}
+                    disabled={markingPaid || !buyerName || !buyerEmail}
+                    className="w-full font-mono text-xs uppercase tracking-[0.15em]"
+                  >
+                    {markingPaid ? "Marking paid…" : "Mark as paid"}
+                  </Button>
+                </div>
               </>
             )}
 
             <div className="border-t border-white/10 pt-4">
-              <Button
-                variant="outline"
-                onClick={() => patch({ isLocked: !selected.isLocked })}
-                disabled={busy}
-                className={`w-full font-mono text-xs uppercase tracking-[0.15em] ${
-                  selected.isLocked
-                    ? "border-emerald-400/40 text-emerald-400"
-                    : "border-amber-400/40 text-amber-400"
-                }`}
-              >
-                {selected.isLocked ? "Unlock table" : "Lock table"}
-              </Button>
-              <p className="mt-2 font-mono text-[10px] text-neutral-500">
-                A locked table cannot be reserved by new bookings. Existing bookings are unaffected.
-              </p>
+              {(() => {
+                const unlockBlocked = selected.isLocked && selected.paidStatus === "PAID";
+                return (
+                  <>
+                    <Button
+                      variant="outline"
+                      onClick={() => patch({ isLocked: !selected.isLocked })}
+                      disabled={busy || unlockBlocked}
+                      className={`w-full font-mono text-xs uppercase tracking-[0.15em] ${
+                        selected.isLocked
+                          ? "border-emerald-400/40 text-emerald-400"
+                          : "border-amber-400/40 text-amber-400"
+                      }`}
+                    >
+                      {selected.isLocked ? "Unlock table" : "Lock table"}
+                    </Button>
+                    <p className="mt-2 font-mono text-[10px] text-neutral-500">
+                      {unlockBlocked
+                        ? "This table has a paid reservation — refund it first before unlocking."
+                        : "A locked table cannot be reserved by new bookings. Existing bookings are unaffected."}
+                    </p>
+                  </>
+                );
+              })()}
             </div>
           </div>
         )}

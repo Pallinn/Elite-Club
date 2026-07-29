@@ -7,25 +7,47 @@ const ACTION_TINT: Record<string, string> = {
   "booking.paid": "text-emerald-400",
   "booking.verify_payment_manual": "text-emerald-400",
   "booking.expired": "text-neutral-500",
+  "booking.cancelled": "text-amber-400",
+  "booking.refunded": "text-red-400",
   "ticket.void": "text-red-400",
   "ticket.comp_add": "text-amber-400",
   "ticket.join_redeemed": "text-cyan-400",
+  "ticket.checked_in": "text-emerald-400",
   "table.lock": "text-amber-400",
   "table.unlock": "text-emerald-400",
   "table.edit": "text-orange-400",
+  "table.delete": "text-red-400",
   "payment.succeeded": "text-emerald-400",
   "payment.failed": "text-red-400",
+  "booking.marked_paid_manual": "text-emerald-400",
+  "connect.profile_activated": "text-emerald-400",
+  "connect.profile_deactivated": "text-amber-400",
+  "connect.photo_removed": "text-red-400",
 };
 
 function tintFor(action: string): string {
   return ACTION_TINT[action] ?? "text-neutral-400";
 }
 
-export default async function AdminLogsPage() {
-  const logs = await prisma.auditLog.findMany({
-    orderBy: { createdAt: "desc" },
-    take: 300,
-  });
+export default async function AdminLogsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ action?: string }>;
+}) {
+  const { action } = await searchParams;
+
+  const [logs, distinctActions] = await Promise.all([
+    prisma.auditLog.findMany({
+      where: action ? { action } : undefined,
+      orderBy: { createdAt: "desc" },
+      take: 300,
+    }),
+    prisma.auditLog.findMany({
+      distinct: ["action"],
+      select: { action: true },
+      orderBy: { action: "asc" },
+    }),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -36,6 +58,27 @@ export default async function AdminLogsPage() {
           Most recent 300 events. Newest first.
         </p>
       </div>
+
+      <form className="flex flex-wrap gap-2">
+        <select
+          name="action"
+          defaultValue={action ?? ""}
+          className="h-9 rounded-md border border-white/10 bg-neutral-900 px-2 text-sm text-white"
+        >
+          <option value="">All actions</option>
+          {distinctActions.map((a) => (
+            <option key={a.action} value={a.action}>
+              {a.action}
+            </option>
+          ))}
+        </select>
+        <button
+          type="submit"
+          className="h-9 rounded-md border border-white/10 px-3 text-sm text-white hover:bg-white/5"
+        >
+          Filter
+        </button>
+      </form>
 
       <div className="overflow-x-auto rounded-lg border border-white/10">
         <table className="w-full text-sm">

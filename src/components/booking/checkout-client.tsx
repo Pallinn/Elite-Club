@@ -29,7 +29,7 @@ type Payment = {
 
 type Booking = {
   id: string;
-  status: "HOLD" | "PAID" | "EXPIRED" | "CANCELLED" | "FAILED";
+  status: "HOLD" | "PAID" | "EXPIRED" | "CANCELLED" | "FAILED" | "REFUNDED";
   holdExpiresAt: string | null;
   totalSatang: number;
   contactName: string;
@@ -55,6 +55,16 @@ export function CheckoutClient({ booking: initial }: { booking: Booking }) {
     contactPhone: initial.contactPhone ?? "",
   });
   const [savingContact, setSavingContact] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+
+  async function cancelAndLeave() {
+    setCancelling(true);
+    try {
+      await fetch(`/api/bookings/${initial.id}/cancel`, { method: "POST" });
+    } finally {
+      router.push("/book");
+    }
+  }
 
   useEffect(() => {
     if (booking?.status === "PAID") {
@@ -69,7 +79,7 @@ export function CheckoutClient({ booking: initial }: { booking: Booking }) {
     amountSatang: item.subtotalSatang,
   }));
 
-  if (booking.status === "EXPIRED" || booking.status === "CANCELLED") {
+  if (booking.status === "EXPIRED" || booking.status === "CANCELLED" || booking.status === "REFUNDED") {
     return (
       <BookingShell step="details" backHref="/book">
         <div className="mx-auto max-w-lg rounded-lg border border-white/10 bg-neutral-950 p-8 text-center">
@@ -173,10 +183,11 @@ export function CheckoutClient({ booking: initial }: { booking: Booking }) {
               <div className="mt-8 flex gap-3">
                 <Button
                   variant="outline"
+                  disabled={cancelling}
                   className="font-mono text-xs uppercase tracking-[0.15em]"
-                  onClick={() => router.push("/book")}
+                  onClick={cancelAndLeave}
                 >
-                  ← Back
+                  {cancelling ? "Cancelling..." : "← Back"}
                 </Button>
                 <Button
                   disabled={savingContact}
@@ -193,13 +204,21 @@ export function CheckoutClient({ booking: initial }: { booking: Booking }) {
               <div className="mt-6 max-w-md">
                 <PaymentPanel bookingId={booking.id} />
               </div>
-              <div className="mt-6">
+              <div className="mt-6 flex gap-3">
                 <Button
                   variant="outline"
                   className="font-mono text-xs uppercase tracking-[0.15em]"
                   onClick={() => setSubStep("details")}
                 >
                   ← Back
+                </Button>
+                <Button
+                  variant="outline"
+                  disabled={cancelling}
+                  className="border-red-500/40 font-mono text-xs uppercase tracking-[0.15em] text-red-400 hover:bg-red-500/10"
+                  onClick={cancelAndLeave}
+                >
+                  {cancelling ? "Cancelling..." : "Cancel reservation"}
                 </Button>
               </div>
             </div>

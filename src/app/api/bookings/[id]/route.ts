@@ -3,6 +3,7 @@ import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { expireStaleHolds } from "@/lib/expire-holds";
+import { recordAudit } from "@/lib/audit";
 
 const bookingInclude = {
   items: { include: { zone: true, table: true, tickets: true } },
@@ -38,7 +39,15 @@ export async function GET(
     booking.holdExpiresAt.getTime() < Date.now();
 
   if (isStale) {
-    await expireStaleHolds(prisma, { id: booking.id });
+    const expiredIds = await expireStaleHolds(prisma, { id: booking.id });
+    for (const expiredId of expiredIds) {
+      await recordAudit({
+        action: "booking.expired",
+        entityType: "Booking",
+        entityId: expiredId,
+        actorLabel: "system",
+      });
+    }
     booking = await prisma.booking.findUnique({ where: { id }, include: bookingInclude });
     if (!booking) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });

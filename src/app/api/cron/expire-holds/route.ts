@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { expireStaleHolds } from "@/lib/expire-holds";
+import { recordAudit } from "@/lib/audit";
 
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get("authorization");
@@ -8,7 +9,17 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const expired = await expireStaleHolds(prisma);
+  const expiredIds = await expireStaleHolds(prisma);
 
-  return NextResponse.json({ expired });
+  for (const id of expiredIds) {
+    await recordAudit({
+      action: "booking.expired",
+      entityType: "Booking",
+      entityId: id,
+      actorLabel: "system",
+      metadata: { source: "cron" },
+    });
+  }
+
+  return NextResponse.json({ expired: expiredIds.length });
 }

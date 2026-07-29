@@ -30,12 +30,18 @@ export function FloorPlanBooking({
   const tables = useMemo<FloorTable[]>(() => {
     if (!data?.zones) return initialTables;
     const bookedTableIds = new Set<string>();
+    const lockedTableIds = new Set<string>();
     for (const zone of data.zones) {
       for (const table of zone.tables ?? []) {
         if (table.isBooked) bookedTableIds.add(table.id);
+        if (table.isLocked) lockedTableIds.add(table.id);
       }
     }
-    return initialTables.map((t) => ({ ...t, isBooked: bookedTableIds.has(t.tableId) }));
+    return initialTables.map((t) => ({
+      ...t,
+      isBooked: bookedTableIds.has(t.tableId),
+      isLocked: lockedTableIds.has(t.tableId),
+    }));
   }, [data, initialTables]);
 
   const [floor, setFloor] = useState<1 | 2>(1);

@@ -17,13 +17,13 @@ export async function expireStaleHolds(
   db: Db,
   extraWhere: Prisma.BookingWhereInput = {},
   now: Date = new Date()
-): Promise<number> {
+): Promise<string[]> {
   const stale = await db.booking.findMany({
     where: { status: "HOLD", holdExpiresAt: { lt: now }, ...extraWhere },
     select: { id: true },
   });
 
-  if (stale.length === 0) return 0;
+  if (stale.length === 0) return [];
 
   const staleIds = stale.map((b) => b.id);
 
@@ -36,5 +36,5 @@ export async function expireStaleHolds(
     data: { isActive: false },
   });
 
-  return staleIds.length;
+  return staleIds;
 }

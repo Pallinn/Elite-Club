@@ -219,9 +219,10 @@ function TableManager({ zoneId, tables }: { zoneId: string; tables: Table[] }) {
 
 function NewZoneForm() {
   const router = useRouter();
+  // General Admission isn't sold on this event (no purchase UI/check-in/email
+  // exists for it) - new zones are VIP tables only, so it's not offered here.
   const [form, setForm] = useState({
     name: "",
-    type: "GENERAL_ADMISSION" as "GENERAL_ADMISSION" | "VIP_TABLE",
     priceSatang: "",
     totalCapacity: "",
   });
@@ -234,7 +235,7 @@ function NewZoneForm() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         name: form.name,
-        type: form.type,
+        type: "VIP_TABLE",
         priceSatang: Math.round(Number(form.priceSatang || 0) * 100),
         totalCapacity: Number(form.totalCapacity || 0),
       }),
@@ -244,7 +245,7 @@ function NewZoneForm() {
       toast.error("Couldn't create zone.");
       return;
     }
-    setForm({ name: "", type: "GENERAL_ADMISSION", priceSatang: "", totalCapacity: "" });
+    setForm({ name: "", priceSatang: "", totalCapacity: "" });
     router.refresh();
   }
 
@@ -261,17 +262,6 @@ function NewZoneForm() {
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
           />
-        </div>
-        <div className="space-y-1">
-          <Label className="text-xs">Type</Label>
-          <select
-            value={form.type}
-            onChange={(e) => setForm({ ...form, type: e.target.value as typeof form.type })}
-            className="h-8 rounded-md border border-white/10 bg-neutral-900 px-2 text-sm text-white"
-          >
-            <option value="GENERAL_ADMISSION">General Admission</option>
-            <option value="VIP_TABLE">VIP Table</option>
-          </select>
         </div>
         <div className="space-y-1">
           <Label className="text-xs">Price (THB)</Label>

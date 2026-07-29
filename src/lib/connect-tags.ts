@@ -29,3 +29,10 @@ export const CONNECT_MIN_AGE = 18;
 export function connectPhotoSrc(storedUrl: string): string {
   return `/api/connect/photo?url=${encodeURIComponent(storedUrl)}`;
 }
+
+// Admin variant of the above - gated by admin role instead of Connect
+// ticket-eligibility, so staff can review profile photos for moderation
+// without needing a ticket themselves.
+export function adminConnectPhotoSrc(storedUrl: string): string {
+  return `/api/admin/connect-photo?url=${encodeURIComponent(storedUrl)}`;
+}

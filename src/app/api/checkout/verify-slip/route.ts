@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { finalizeBookingPayment } from "@/lib/tickets";
 import { verifySlipByImage, verifySlipByQrPayload, type Slip2GoResult } from "@/lib/slip2go";
 import { expireStaleHolds } from "@/lib/expire-holds";
+import { recordAudit } from "@/lib/audit";
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_BYTES = 5 * 1024 * 1024;
@@ -132,7 +133,6 @@ export async function POST(request: Request) {
         failureMessage: message,
       },
     });
-    await prisma.booking.update({ where: { id: bookingId }, data: { status: "FAILED" } });
     return NextResponse.json({ error: message }, { status: 422 });
   }
 
@@ -166,7 +166,6 @@ export async function POST(request: Request) {
           failureMessage: message,
         },
       });
-      await prisma.booking.update({ where: { id: bookingId }, data: { status: "FAILED" } });
       return NextResponse.json({ error: message }, { status: 409 });
     }
     throw err;
@@ -186,7 +185,15 @@ async function guardBookingForVerification(
     return { error: NextResponse.json({ error: "Booking not found" }, { status: 404 }) };
   }
   if (booking.status === "HOLD" && booking.holdExpiresAt && booking.holdExpiresAt < new Date()) {
-    await expireStaleHolds(prisma, { id: booking.id });
+    const expiredIds = await expireStaleHolds(prisma, { id: booking.id });
+    for (const expiredId of expiredIds) {
+      await recordAudit({
+        action: "booking.expired",
+        entityType: "Booking",
+        entityId: expiredId,
+        actorLabel: "system",
+      });
+    }
     return { error: NextResponse.json({ error: "This reservation has expired." }, { status: 410 }) };
   }
   if (booking.status !== "HOLD") {

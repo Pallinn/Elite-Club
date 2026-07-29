@@ -61,6 +61,7 @@ export default async function AdminReservationDetailPage({
       method: p.method,
       amountSatang: p.amountSatang,
       createdAt: p.createdAt.toISOString(),
+      slipTransRef: p.slipTransRef,
     })),
   };
 

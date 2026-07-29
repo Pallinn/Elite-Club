@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getEventAvailability } from "@/lib/availability";
+import { expireStaleHolds } from "@/lib/expire-holds";
+import { recordAudit } from "@/lib/audit";
 import { BookPageTabs } from "@/components/booking/book-page-tabs";
 import type { FloorTable } from "@/components/booking/floor-plan-map";
 
@@ -19,6 +21,18 @@ export default async function BookPage() {
     );
   }
 
+  // Availability reads already exclude a lapsed hold (see
+  // activeBookingItemFilter), and /api/holds itself re-sweeps the specific
+  // table right before creating a new one - so this isn't needed for
+  // correctness. It's extra hygiene: /book is the highest-traffic page, so
+  // sweeping here keeps stale HOLD rows from sitting around (looking stuck
+  // in the admin dashboard) between cron runs, for any table, not just the
+  // one someone happens to click next.
+  const expiredIds = await expireStaleHolds(prisma, { eventId: event.id });
+  for (const id of expiredIds) {
+    await recordAudit({ action: "booking.expired", entityType: "Booking", entityId: id, actorLabel: "system" });
+  }
+
   const zones = await getEventAvailability(event.id);
 
   const tables: FloorTable[] = zones.flatMap((zone) =>
@@ -30,6 +44,7 @@ export default async function BookPage() {
       capacity: table.capacity,
       priceSatang: table.priceSatang ?? zone.priceSatang,
       isBooked: table.isBooked,
+      isLocked: table.isLocked,
       floor: table.floor === 2 ? 2 : 1,
       positionXPct: table.positionXPct,
       positionYPct: table.positionYPct,
