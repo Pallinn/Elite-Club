@@ -4,9 +4,10 @@ import { useState } from "react";
 import Image from "next/image";
 
 const LINEUP = [
-  { name: "GRIDLOCK", time: "00:00 — 02:00", image: "/images/dj_1.png" },
-  { name: "PHANTOM.WAV", time: "22:00 — 00:00", image: "/images/dj_2.png" },
-  { name: "ACIDBURN", time: "02:00 — 04:00", image: "/images/dj_3.png" },
+  { name: "AJ", image: "/images/dj_aj.png" },
+  { name: "ARTY", image: "/images/dj_arty.png" },
+  { name: "KENYA", image: "/images/dj_kenya.png" },
+  { name: "TBA", image: "/images/dj_1.png" },
 ];
 
 export function LineupSection() {
@@ -28,7 +29,7 @@ export function LineupSection() {
               data-state={state}
               onMouseEnter={() => setHovered(i)}
               onMouseLeave={() => setHovered(null)}
-              className="group relative h-[52vh] w-[78vw] max-w-xs shrink-0 snap-center overflow-hidden rounded-lg border border-white/10 bg-black/70 transition-[width] duration-500 ease-out sm:h-auto sm:max-w-none sm:shrink sm:flex-none sm:rounded-none sm:border-0 sm:data-[state=hovered]:w-1/2 sm:data-[state=neutral]:w-1/3 sm:data-[state=shrunk]:w-1/4"
+              className="group relative h-[52vh] w-[78vw] max-w-xs shrink-0 snap-center overflow-hidden rounded-lg border border-white/10 bg-black/70 transition-[width] duration-500 ease-out sm:h-auto sm:max-w-none sm:shrink sm:flex-none sm:rounded-none sm:border-0 sm:data-[state=hovered]:w-[34%] sm:data-[state=neutral]:w-1/4 sm:data-[state=shrunk]:w-[22%]"
             >
               <span className="pointer-events-none absolute left-4 top-4 z-10 h-5 w-5 border-l border-t border-amber-400/40" />
               <span className="pointer-events-none absolute right-4 top-4 z-10 h-5 w-5 border-r border-t border-amber-400/40" />
@@ -47,10 +48,6 @@ export function LineupSection() {
                 <span className="text-center font-heading text-3xl font-bold uppercase leading-none tracking-tight text-orange-500 opacity-70 transition-opacity duration-500 group-hover:opacity-70 sm:text-5xl sm:opacity-0 sm:group-hover:opacity-70 md:text-6xl">
                   {artist.name}
                 </span>
-              </div>
-
-              <div className="pointer-events-none absolute inset-x-0 bottom-3 text-center font-mono text-[10px] uppercase tracking-[0.2em] text-neutral-300 sm:hidden">
-                {artist.time}
               </div>
             </div>
           );
