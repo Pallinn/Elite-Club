@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { formatSatangRange } from "@/lib/money";
 
@@ -29,16 +28,6 @@ export function EventsSection({ tiers }: { tiers: TierCard[] }) {
               key={tier.id}
               className="flex w-[78vw] max-w-xs shrink-0 snap-center flex-col overflow-hidden rounded-lg border border-white/10 bg-black/60 backdrop-blur-sm transition-colors hover:border-amber-400/50 sm:w-auto sm:max-w-none sm:shrink"
             >
-              <div className="relative flex aspect-[16/7] items-center justify-center border-b border-white/10 bg-white/5 sm:aspect-video">
-                {tier.imageUrl ? (
-                  <Image src={tier.imageUrl} alt={tier.name} fill className="object-cover" />
-                ) : (
-                  <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-neutral-600">
-                    Image coming soon
-                  </span>
-                )}
-              </div>
-
               <div className="flex flex-1 flex-col p-3 sm:p-6">
                 <h3 className="font-heading text-lg font-bold uppercase text-white sm:text-2xl">{tier.name}</h3>
 
@@ -62,7 +51,7 @@ export function EventsSection({ tiers }: { tiers: TierCard[] }) {
                 <Button
                   variant="outline"
                   disabled={tier.soldOut}
-                  className="border-amber-400 text-amber-400 hover:bg-amber-400 hover:text-black mt-3 font-mono text-xs uppercase tracking-[0.15em] sm:mt-6"
+                  className="border-amber-400 text-amber-400 hover:bg-amber-400 hover:text-black mt-auto font-mono text-xs uppercase tracking-[0.15em]"
                   nativeButton={false}
                   render={<Link href="/book" />}
                 >

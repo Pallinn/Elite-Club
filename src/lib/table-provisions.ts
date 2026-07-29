@@ -14,7 +14,7 @@ const VIP: TableProvisions = { capacityRange: "4–6", blackLabel: 1, mixers: 3 
 const REGULAR: TableProvisions = { capacityRange: "4–6", blackLabel: 1, mixers: 3 };
 const VVIP1: TableProvisions = { capacityRange: "12–16", blackLabel: 2, mixers: 8 };
 const VVIP2: TableProvisions = { capacityRange: "8–12", blackLabel: 2, mixers: 6 };
-const VVIP3: TableProvisions = { capacityRange: "6–8", blackLabel: 2, mixers: 5 };
+const VVIP3: TableProvisions = { capacityRange: "6–8", blackLabel: 1, mixers: 5 };
 
 export function tableProvisions(label: string): TableProvisions {
   const norm = label.replace(/\s+/g, "").toUpperCase();

@@ -23,9 +23,9 @@ const TIER_IMAGE: Record<string, string | null> = {
 };
 
 const TIER_PERKS: Record<string, string[]> = {
-  VVIP: ["Priority entry", "Dedicated server"],
-  VIP: ["Main floor access", "All stages"],
-  Regular: ["Main floor access", "All stages"],
+  VVIP: ["Priority entry", "Connect function"],
+  VIP: ["VIP zone access"],
+  Regular: [],
 };
 
 function tierNameFromZone(zoneName: string) {
