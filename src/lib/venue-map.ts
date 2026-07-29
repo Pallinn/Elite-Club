@@ -112,13 +112,14 @@ export const FLOOR_LAYOUTS: Record<1 | 2, FloorLayout> = {
     furniture: [
       // VVIP1 lounge sofas — one continuous vertical bar (the two rects
       // Figma split it into were flush, so merged into one) plus the
-      // bottom horizontal bar, forming an L.
-      { x: 1085, y: 455, width: 51, height: 293, label: "SOFA" },
-      { x: 849, y: 682, width: 287, height: 66, label: "SOFA" },
+      // bottom horizontal bar, forming an L. No "SOFA" text inside the VVIP
+      // rooms - the room already reads as VVIP1/VVIP2 via its zone label.
+      { x: 1085, y: 455, width: 51, height: 293 },
+      { x: 849, y: 682, width: 287, height: 66 },
       // VVIP2 booth sofas (left, right, bottom)
-      { x: 242, y: 437, width: 51, height: 117, label: "SOFA" },
-      { x: 447, y: 437, width: 51, height: 117, label: "SOFA" },
-      { x: 302.192, y: 553.528, width: 39.0377, height: 135.944, transform: "rotate(-90 302.192 553.528)", label: "SOFA" },
+      { x: 242, y: 437, width: 51, height: 117 },
+      { x: 447, y: 437, width: 51, height: 117 },
+      { x: 302.192, y: 553.528, width: 39.0377, height: 135.944, transform: "rotate(-90 302.192 553.528)" },
       // Entrance sofas — top strip, chamfered corner piece, left strip,
       // one continuous ribbon around the entrance.
       { x: 112, y: -3, width: 585, height: 89, label: "SOFA" },
@@ -127,45 +128,41 @@ export const FLOOR_LAYOUTS: Record<1 | 2, FloorLayout> = {
     ],
     furnitureCircles: [],
   },
+  // Floor 2's room is smaller than Floor 1's - traced from a newer plan
+  // ("Floor 2 (5).svg") where the diagonal wall is much less steep and
+  // VVIP3 sits lower/further right, leaving a large empty band across the
+  // top of the canvas. FloorPlanMap fills that empty band with the Floor 1
+  // ghost preview (see FLOOR1_GHOST_CLIP_POLYGON in floor-plan-map.tsx),
+  // same mechanism as before, just a bigger clip region.
   2: {
     width: 1161,
     height: 828,
     walls: [
-      { x1: 522.742, y1: 828.572, x2: 1163.5, y2: 443.5 },
-      { x1: 490.742, y1: 781.572, x2: 1184.74, y2: 362.572 },
-      { x1: 1087.37, y1: 0.333955, x2: 842.372, y2: 273.334 },
-      { x1: 496, y1: 778.875, x2: 46.9951, y2: 778.875 },
-      { x1: 47.5, y1: 778, x2: 47.5, y2: 594 },
-      { x1: 47.5, y1: 594.5, x2: 0, y2: 594.5 },
-      { x1: 842, y1: 273.5, x2: 1161, y2: 273.5 },
+      { x1: 522.742, y1: 826.99, x2: 1163.84, y2: 574.544 },
+      { x1: 490.662, y1: 796.046, x2: 1184.661, y2: 520.956 },
+      { x1: 978.396, y1: 318.305, x2: 843.396, y2: 493.305 },
+      { x1: 496, y1: 794, x2: 47, y2: 794 },
+      { x1: 47.5, y1: 794, x2: 47.5, y2: 673 },
+      { x1: 48, y1: 673, x2: 0, y2: 673 },
+      { x1: 842, y1: 492.5, x2: 1161, y2: 492.5 },
     ],
     rects: [
-      { x: 0, y: 428, width: 15, height: 158 },
-      { x: 0, y: 273, width: 842, height: 92 },
-      { x: 1161.74, y: 444.266, width: 330.428, height: 744.006, transform: "rotate(58.8976 1161.74 444.266)", void: true },
-      { x: 946.377, y: -125.869, width: 187.913, height: 365.336, transform: "rotate(41.9129 946.377 -125.869)", void: true },
-      // The double-height space above Floor 1's stage isn't a separate void
-      // block anymore — FloorPlanMap always shows a tinted Floor 1 ghost
-      // behind Floor 2, so this area just reads as open floor, same as the
-      // rest of Floor 1's plan.
+      { x: 0, y: 564, width: 15, height: 104 },
+      { x: 0, y: 493, width: 747, height: 61 },
+      { x: -0.126554, y: 0.552293, width: 252.031, height: 685.125, transform: "matrix(0.676618 0.736334 -0.929726 0.368253 1162.38 574.67)", void: true },
+      // The empty space above this boundary isn't a separate void block -
+      // FloorPlanMap always shows a tinted Floor 1 ghost behind Floor 2, so
+      // that whole band just reads as open floor, same as the rest of
+      // Floor 1's plan.
     ],
     shapes: [],
     labels: [],
-    stairs: { x: 421, y: 319, text: "← To 1st Floor", align: "middle" },
+    stairs: { x: 373.5, y: 523.5, text: "← To 1st Floor", align: "middle" },
     furniture: [
-      { x: 0, y: 595, width: 47, height: 233, label: "SOFA" },
-      { x: 47, y: 828, width: 49, height: 448, transform: "rotate(-90 47 828)", label: "SOFA" },
-      { x: 1162.17, y: 377.415, width: 57.3853, height: 812.166, transform: "rotate(58.9 1162.17 377.415)", label: "SOFA" },
-      // VVIP3 stools/side-table cluster
-      { x: 1109, y: 92, width: 38, height: 117, rx: 10 },
-      { x: 1058, y: 53, width: 41, height: 41, rx: 10 },
-      { x: 1006, y: 105, width: 41, height: 41, rx: 10 },
-      { x: 1006, y: 168, width: 41, height: 41, rx: 10 },
+      { x: 0, y: 674, width: 52, height: 153, label: "SOFA" },
+      { x: 47, y: 827, width: 39, height: 448, transform: "rotate(-90 47 827)", label: "SOFA" },
+      { x: 0, y: 0, width: 49.9406, height: 747.986, transform: "matrix(0.676584 0.736366 -0.929738 0.368223 1158.03 526.274)", label: "SOFA" },
     ],
-    furnitureCircles: [
-      { cx: 1077, cy: 127.5, r: 19 },
-      { cx: 1077, cy: 168.5, r: 19 },
-      { cx: 1077, cy: 209.5, r: 19 },
-    ],
+    furnitureCircles: [],
   },
 };

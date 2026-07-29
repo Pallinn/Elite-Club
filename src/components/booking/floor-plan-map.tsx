@@ -21,12 +21,14 @@ export type FloorTable = {
 // independently, e.g. for pricing/provisions), so re-tiering capacity never
 // moves or resizes a marker on the floor plan.
 // Plain tables ≈ r36.5, the booth ≈ r63, the lounges average ≈ r88 between
-// Floor 1's r91.5 and Floor 2's r67. Floor 2's plain VIP 1-5 tables are sized
-// up further per request.
+// Floor 1's r91.5 and Floor 2's r67. Floor 2's plain VIP 1-5 tables were
+// sized up further per request, but on the newer/smaller Floor 2 plan VIP3-5
+// sit close enough to the diagonal sofa that r55 visibly overlapped it -
+// r38 clears the sofa at every VIP position with a small margin.
 function tableRadius(label: string, floor: 1 | 2) {
   if (/^(VVIP1|VVIP3)$/.test(label)) return 88;
   if (label === "VVIP2") return 63;
-  if (floor === 2) return 55; // VIP 1-5
+  if (floor === 2) return 38; // VIP 1-5
   return 36.5; // Floor 1 numbered tables 1-16
 }
 
@@ -62,13 +64,14 @@ const VVIP_ZONE_POLYGONS: Record<string, { x: number; y: number }[]> = {
     { x: 1140, y: 430.5 },
     { x: 1140, y: 830 },
   ],
-  // Floor 2, VVIP3 - the top-right corner lounge, chamfered by the diagonal
-  // wall running from (1087.37,0) down to (842.37,273.33).
+  // Floor 2, VVIP3 - the right-side lounge (moved down/right on the newer,
+  // smaller Floor 2 plan), chamfered by the diagonal wall running from
+  // (978,317.5) down to (843.4,493.3).
   "2:VVIP3": [
-    { x: 1087.4, y: 0 },
-    { x: 842.4, y: 273.3 },
-    { x: 1161, y: 273.5 },
-    { x: 1161, y: 0 },
+    { x: 978, y: 317.5 },
+    { x: 843.396, y: 493.305 },
+    { x: 1161, y: 492.5 },
+    { x: 1161, y: 317.5 },
   ],
 };
 
@@ -77,22 +80,22 @@ const VVIP_ZONE_POLYGONS: Record<string, { x: number; y: number }[]> = {
 // are hand-placed to sit clearly inside each room.
 const VVIP_LABEL_POS: Record<string, { x: number; y: number }> = {
   "1:VVIP2": { x: 370.5, y: 481.5 },
-  "1:VVIP1": { x: 990, y: 650 },
-  "2:VVIP3": { x: 1070, y: 180 },
+  "1:VVIP1": { x: 990, y: 600 },
+  "2:VVIP3": { x: 1030, y: 430 },
 };
 
-// The Floor 1 "ghost" behind Floor 2 only peeks through in the strip above
-// the stairwell landing, to the left of VVIP3. A plain rectangle here would
-// slice straight through Floor 1's STAGE box wherever it happens to cross
-// x=843, leaving an ugly hard-edged gap between the cut-off STAGE and
-// VVIP3's triangle. Following VVIP3's own diagonal wall instead means the
-// clip edge lines up exactly with VVIP3's boundary - no gap, and STAGE only
-// loses the small corner that would genuinely fall inside VVIP3's room.
+// The Floor 1 "ghost" behind Floor 2 peeks through wherever Floor 2's own
+// (smaller) plan doesn't have a room - a broad band across the top of the
+// canvas, carved out around VVIP3 following VVIP3's own diagonal wall so
+// the clip edge lines up exactly with VVIP3's boundary (no gap between the
+// ghost and VVIP3's zone).
 const FLOOR1_GHOST_CLIP_POLYGON = [
   { x: 0, y: 0 },
-  { x: 1087.37, y: 0 },
-  { x: 842.372, y: 273.334 },
-  { x: 0, y: 273.334 },
+  { x: 1161, y: 0 },
+  { x: 1161, y: 317.5 },
+  { x: 978, y: 317.5 },
+  { x: 843.396, y: 493.305 },
+  { x: 0, y: 493.305 },
 ];
 
 // Walls and STAGE/BAR-style rects only - the static shell of the floor,
@@ -134,7 +137,7 @@ function FloorBase({ layout }: { layout: FloorLayout }) {
                 fontSize={Math.min(r.width, r.height) * 0.22}
                 textAnchor="middle"
                 dominantBaseline="middle"
-                fontFamily="var(--font-jetbrains-mono)"
+                fontFamily="var(--font-google-sans)"
                 letterSpacing={2}
                 style={{ pointerEvents: "none" }}
               >
@@ -149,22 +152,27 @@ function FloorBase({ layout }: { layout: FloorLayout }) {
 
 // Sofas and stools - drawn *after* the tables/VVIP zone polygons (see
 // FloorPlanMap's render order) so the sofa sits on top of a VVIP zone's
-// orange tint instead of being washed out underneath it.
+// tint instead of being washed out underneath it. Solid opaque white, no
+// per-piece stroke - the entrance corner is built from three abutting
+// rects (two straight + one rotated chamfer piece), and giving each one
+// its own border drew visible seam lines where they meet/overlap. Sharing
+// one flat fill with no outline makes them read as a single continuous
+// sofa instead.
 function FloorFurniture({ layout }: { layout: FloorLayout }) {
   return (
     <>
       {layout.furniture.map((f, i) => (
         <g key={i} transform={f.transform} style={{ pointerEvents: "none" }}>
-          <rect x={f.x} y={f.y} width={f.width} height={f.height} rx={f.rx} fill="oklch(0.5 0.19 25)" />
+          <rect x={f.x} y={f.y} width={f.width} height={f.height} rx={f.rx} fill="oklch(1 0 0)" />
           {f.label && (
             <text
               x={f.x + f.width / 2}
               y={f.y + f.height / 2}
-              fill="oklch(0.9 0.05 25)"
+              fill="oklch(0.2 0 0)"
               fontSize={Math.min(f.width, f.height) * 0.35}
               textAnchor="middle"
               dominantBaseline="middle"
-              fontFamily="var(--font-jetbrains-mono)"
+              fontFamily="var(--font-google-sans)"
               letterSpacing={1}
             >
               {f.label}
@@ -216,6 +224,7 @@ function TableMarker({
   onSelect,
   selectableWhenBooked,
   interactive,
+  dimmed = false,
 }: {
   table: FloorTable;
   floor: 1 | 2;
@@ -223,22 +232,60 @@ function TableMarker({
   onSelect: (table: FloorTable) => void;
   selectableWhenBooked: boolean;
   interactive: boolean;
+  /** True for the non-interactive Floor 1 ghost shown behind Floor 2 - every
+   * table reads as flat unavailable-gray there regardless of its real
+   * booking/selection state, since it's just background context for "you're
+   * on Floor 2 now", not a live picker. */
+  dimmed?: boolean;
 }) {
-  const { radius, cx, cy, polygon } = tableMarkerGeometry(table, floor);
-  const fill = table.isBooked
-    ? "oklch(0.3 0 0)"
-    : isSelected
-      ? "oklch(0.72 0.19 55)"
-      : table.isPremium
-        ? "oklch(0.72 0.19 55 / 25%)"
-        : "oklch(1 0 0 / 8%)";
-  const stroke = table.isBooked
-    ? "oklch(0.4 0 0)"
-    : isSelected
-      ? "oklch(0.72 0.19 55)"
-      : table.isPremium
-        ? "oklch(0.72 0.19 55 / 70%)"
-        : "oklch(1 0 0 / 30%)";
+  const { radius, cx, cy, polygon, labelPos } = tableMarkerGeometry(table, floor);
+  // Regular tables read as the same solid maroon/red circle. A VVIP/VVIP-
+  // lounge zone instead draws two layers: the whole room outline tinted a
+  // translucent white "zone" wash, plus a small solid badge - sized to just
+  // fit its label - in the same red as the regular tables, so VVIP reads as
+  // a named badge inside a highlighted room rather than one big red room.
+  // Available = brand orange (--primary). Selected switches to green rather
+  // than reusing that same orange, so a picked table still reads distinctly
+  // from every other available one.
+  const fill = dimmed
+    ? "oklch(0.32 0 0)"
+    : table.isBooked
+      ? "oklch(0.3 0 0)"
+      : isSelected
+        ? "oklch(0.65 0.2 145)"
+        : "oklch(0.72 0.19 55)";
+  const stroke = dimmed
+    ? "oklch(0.45 0 0)"
+    : table.isBooked
+      ? "oklch(0.4 0 0)"
+      : isSelected
+        ? "oklch(0.5 0.2 145)"
+        : "oklch(0.55 0.19 55)";
+  const zoneFill = dimmed
+    ? "oklch(0.32 0 0 / 40%)"
+    : table.isBooked
+      ? "oklch(0.3 0 0 / 40%)"
+      : isSelected
+        ? "oklch(0.65 0.2 145 / 50%)"
+        : "oklch(1 0 0 / 50%)";
+  const zoneStroke = dimmed
+    ? "oklch(0.45 0 0 / 60%)"
+    : table.isBooked
+      ? "oklch(0.4 0 0 / 60%)"
+      : isSelected
+        ? "oklch(0.5 0.2 145 / 80%)"
+        : "oklch(1 0 0 / 70%)";
+
+  // Badge box sized to fit the label text (monospace, so a per-character
+  // width estimate is exact enough) plus a comfortable padding, rather than
+  // a fixed size that would either clip a longer label or float loose
+  // around a shorter one.
+  const badgeFontSize = 24;
+  const badgeCharWidth = badgeFontSize * 0.62;
+  const badgePaddingX = 20;
+  const badgePaddingY = 14;
+  const badgeWidth = table.label.length * badgeCharWidth + badgePaddingX * 2;
+  const badgeHeight = badgeFontSize + badgePaddingY * 2;
 
   return (
     <g
@@ -248,13 +295,26 @@ function TableMarker({
       style={{ cursor: interactive ? (!selectableWhenBooked && table.isBooked ? "not-allowed" : "pointer") : undefined }}
     >
       {polygon ? (
-        <polygon
-          points={polygon.map((p) => `${p.x},${p.y}`).join(" ")}
-          fill={fill}
-          stroke={stroke}
-          strokeWidth={isSelected ? 4 : 2}
-          strokeLinejoin="round"
-        />
+        <>
+          <polygon
+            points={polygon.map((p) => `${p.x},${p.y}`).join(" ")}
+            fill={zoneFill}
+            stroke={zoneStroke}
+            strokeWidth={isSelected ? 4 : 2}
+            strokeLinejoin="round"
+          />
+          <rect
+            x={labelPos.x - badgeWidth / 2}
+            y={labelPos.y - badgeHeight / 2}
+            width={badgeWidth}
+            height={badgeHeight}
+            rx={6}
+            fill={fill}
+            stroke={stroke}
+            strokeWidth={isSelected ? 3 : 1.5}
+            style={{ pointerEvents: "none" }}
+          />
+        </>
       ) : (
         <>
           {interactive && radius < MIN_HIT_RADIUS && (
@@ -270,17 +330,17 @@ function TableMarker({
 // A table's label text, rendered as its own pass on top of the furniture
 // layer (see FloorPlanMap) so it never gets covered by a sofa/stool sitting
 // inside the same VVIP zone.
-function TableLabel({ table, floor }: { table: FloorTable; floor: 1 | 2 }) {
+function TableLabel({ table, floor, dimmed = false }: { table: FloorTable; floor: 1 | 2; dimmed?: boolean }) {
   const { radius, polygon, labelPos } = tableMarkerGeometry(table, floor);
   return (
     <text
       x={labelPos.x}
       y={labelPos.y}
-      fill={table.isBooked ? "oklch(0.5 0 0)" : "oklch(0.97 0 0)"}
+      fill={dimmed ? "oklch(0.62 0 0)" : table.isBooked ? "oklch(0.5 0 0)" : "oklch(0.97 0 0)"}
       fontSize={polygon ? 24 : Math.min(radius * 0.42, 22)}
       textAnchor="middle"
       dominantBaseline="middle"
-      fontFamily="var(--font-jetbrains-mono)"
+      fontFamily="var(--font-google-sans)"
       fontWeight={700}
       style={{ pointerEvents: "none" }}
     >
@@ -376,7 +436,7 @@ export function FloorPlanMap({
       >
         <g transform={`translate(${floor1OffsetX} 0) scale(${floor1Scale})`}>
           <FloorBase layout={FLOOR_LAYOUTS[1]} />
-          {floor1Tables.map((t) => (
+          {floor1Tables.filter((t) => !t.isPremium).map((t) => (
             <TableMarker
               key={t.key}
               table={t}
@@ -385,22 +445,38 @@ export function FloorPlanMap({
               onSelect={onSelect}
               selectableWhenBooked={selectableWhenBooked}
               interactive={false}
+              dimmed
             />
           ))}
           <FloorFurniture layout={FLOOR_LAYOUTS[1]} />
+          {/* VVIP zones (wash + badge) paint after furniture so a room's own
+              stools/sofa never sit on top of its zone tint or badge. */}
+          {floor1Tables.filter((t) => t.isPremium).map((t) => (
+            <TableMarker
+              key={t.key}
+              table={t}
+              floor={1}
+              isSelected={selectedKeys.has(t.key)}
+              onSelect={onSelect}
+              selectableWhenBooked={selectableWhenBooked}
+              interactive={false}
+              dimmed
+            />
+          ))}
           {floor1Tables.map((t) => (
-            <TableLabel key={t.key} table={t} floor={1} />
+            <TableLabel key={t.key} table={t} floor={1} dimmed />
           ))}
         </g>
-        {/* The light-gray tint wash - a translucent overlay, not a color
-            swap, so Floor 1's real colors (the sofa's maroon, etc.) still
-            show through faintly underneath. */}
+        {/* The gray tint wash - a translucent overlay, not a color swap, so
+            Floor 1's shapes stay visible underneath, just heavily muted -
+            this is background context for "you're on Floor 2 now", not a
+            live picker. */}
         <rect
           x={0}
           y={0}
           width={FLOOR_LAYOUTS[1].width}
           height={FLOOR_LAYOUTS[1].height}
-          fill="oklch(0.85 0 0 / 45%)"
+          fill="oklch(0.55 0 0 / 65%)"
         />
       </g>
 
@@ -423,7 +499,7 @@ export function FloorPlanMap({
             fontSize={30}
             textAnchor={layout.stairs.align ?? "middle"}
             dominantBaseline="middle"
-            fontFamily="var(--font-jetbrains-mono)"
+            fontFamily="var(--font-google-sans)"
             fontWeight={700}
           >
             {layout.stairs.text}
@@ -438,14 +514,14 @@ export function FloorPlanMap({
             fill="oklch(0.6 0 0)"
             fontSize={18}
             textAnchor={l.align ?? "start"}
-            fontFamily="var(--font-jetbrains-mono)"
+            fontFamily="var(--font-google-sans)"
             style={{ pointerEvents: "none" }}
           >
             {l.text}
           </text>
         ))}
 
-        {tables.map((t) => (
+        {tables.filter((t) => !t.isPremium).map((t) => (
           <TableMarker
             key={t.key}
             table={t}
@@ -458,6 +534,20 @@ export function FloorPlanMap({
         ))}
 
         <FloorFurniture layout={layout} />
+
+        {/* VVIP zones (wash + badge) paint after furniture so a room's own
+            stools/sofa never sit on top of its zone tint or badge. */}
+        {tables.filter((t) => t.isPremium).map((t) => (
+          <TableMarker
+            key={t.key}
+            table={t}
+            floor={floor}
+            isSelected={selectedKeys.has(t.key)}
+            onSelect={onSelect}
+            selectableWhenBooked={selectableWhenBooked}
+            interactive
+          />
+        ))}
 
         {tables.map((t) => (
           <TableLabel key={t.key} table={t} floor={floor} />

@@ -94,15 +94,11 @@ export function FloorPlanBooking({
 
           <div className="mt-4 flex flex-wrap gap-4 font-mono text-[10px] uppercase tracking-[0.15em] text-neutral-500">
             <span className="flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full border border-white/30 bg-white/10" />
+              <span className="h-2.5 w-2.5 rounded-full bg-primary" />
               Available
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full border border-primary/70 bg-primary/25" />
-              Premium
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full bg-primary" />
+              <span className="h-2.5 w-2.5 rounded-full border border-[oklch(0.5_0.2_145)] bg-[oklch(0.65_0.2_145)]" />
               Selected
             </span>
             <span className="flex items-center gap-1.5">
