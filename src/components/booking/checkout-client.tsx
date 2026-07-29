@@ -22,6 +22,11 @@ type BookingItem = {
   table: { label: string } | null;
 };
 
+type Payment = {
+  status: "PENDING" | "SUCCEEDED" | "FAILED" | "EXPIRED";
+  failureMessage: string | null;
+};
+
 type Booking = {
   id: string;
   status: "HOLD" | "PAID" | "EXPIRED" | "CANCELLED" | "FAILED";
@@ -31,6 +36,7 @@ type Booking = {
   contactEmail: string;
   contactPhone: string | null;
   items: BookingItem[];
+  payments: Payment[];
   event: { name: string };
 };
 
@@ -70,6 +76,23 @@ export function CheckoutClient({ booking: initial }: { booking: Booking }) {
           <p className="font-heading text-lg font-bold text-white">
             This reservation has expired.
           </p>
+          <Button className="mt-4" onClick={() => router.push("/book")}>
+            Back to tickets
+          </Button>
+        </div>
+      </BookingShell>
+    );
+  }
+
+  if (booking.status === "FAILED") {
+    const reason = booking.payments[0]?.failureMessage;
+    return (
+      <BookingShell step="details" backHref="/book">
+        <div className="mx-auto max-w-lg rounded-lg border border-white/10 bg-neutral-950 p-8 text-center">
+          <p className="font-heading text-lg font-bold text-white">
+            This payment could not be verified.
+          </p>
+          {reason && <p className="mt-2 text-sm text-neutral-400">{reason}</p>}
           <Button className="mt-4" onClick={() => router.push("/book")}>
             Back to tickets
           </Button>
@@ -168,7 +191,7 @@ export function CheckoutClient({ booking: initial }: { booking: Booking }) {
             <div>
               <h1 className="font-heading text-2xl font-bold text-white sm:text-3xl">Payment</h1>
               <div className="mt-6 max-w-md">
-                <PaymentPanel bookingId={booking.id} totalSatang={booking.totalSatang} />
+                <PaymentPanel bookingId={booking.id} />
               </div>
               <div className="mt-6">
                 <Button

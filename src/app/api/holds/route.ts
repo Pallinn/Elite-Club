@@ -6,7 +6,7 @@ import { activeBookingItemFilter } from "@/lib/availability";
 import { expireStaleHolds } from "@/lib/expire-holds";
 import { recordAudit } from "@/lib/audit";
 
-const HOLD_TTL_MINUTES = 12;
+const HOLD_TTL_MINUTES = 15;
 
 export async function POST(request: Request) {
   const session = await auth();

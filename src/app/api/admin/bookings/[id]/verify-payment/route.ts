@@ -6,8 +6,9 @@ import { recordAudit } from "@/lib/audit";
 
 /**
  * Manually mark a HOLD booking as paid — used when a payment arrived offline
- * (wire transfer, cash, or an Omise charge that the webhook missed). Mints
- * tickets and generates join codes just like a normal payment.
+ * or Slip2Go verification failed for a legitimate transfer (e.g. its OCR
+ * misread a slip). Mints tickets and generates join codes just like a normal
+ * payment.
  */
 export async function POST(_request: Request, ctx: { params: Promise<{ id: string }> }) {
   const { id } = await ctx.params;
@@ -27,7 +28,7 @@ export async function POST(_request: Request, ctx: { params: Promise<{ id: strin
   await prisma.payment.create({
     data: {
       bookingId: booking.id,
-      provider: "OMISE",
+      provider: "MANUAL",
       method: "PROMPTPAY",
       status: "SUCCEEDED",
       amountSatang: booking.totalSatang,

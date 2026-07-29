@@ -1,5 +1,5 @@
 // Prisma schema for "No Signal" ticket booking site
-// Money is stored as Int in satang (THB minor unit) to match Omise's own API convention.
+// Money is stored as Int in satang (THB minor unit).
 
 generator client {
   provider        = "prisma-client"
@@ -171,6 +171,10 @@ model Booking {
   status        BookingStatus @default(HOLD)
   holdExpiresAt DateTime?
   totalSatang   Int
+  // totalSatang plus a small per-booking offset (see computeExpectedAmountSatang)
+  // so each booking's PromptPay QR requests a uniquely identifiable amount -
+  // set once, the first time a QR is generated for this booking.
+  expectedAmountSatang Int?
   currency      String        @default("THB")
   contactName   String
   contactEmail  String
@@ -222,29 +226,32 @@ model BookingItem {
 }
 
 model Payment {
-  id             String        @id @default(uuid())
-  bookingId      String
-  provider       String        @default("OMISE")
-  method         PaymentMethod
-  omiseChargeId  String?
-  omiseSourceId  String?
-  status         PaymentStatus @default(PENDING)
-  amountSatang   Int
-  rawResponse    Json?
-  failureCode    String?
-  failureMessage String?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  paidAt         DateTime?
+  id     String @id @default(uuid())
+  bookingId String
+  provider  String @default("SLIP2GO")
+  method    PaymentMethod
+  status    PaymentStatus @default(PENDING)
+  amountSatang Int
+  // EMV QR payload we generated and showed to the customer for this attempt.
+  promptpayPayload String?
+  // Uploaded slip image, stored in Vercel Blob for admin/audit review.
+  slipImageUrl     String?
+  // Slip2Go's transaction reference for a verified slip. Unique across all
+  // Payments so the same bank transfer can never be applied to two bookings.
+  slipTransRef     String? @unique
+  rawResponse      Json?
+  failureCode      String?
+  failureMessage   String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  paidAt           DateTime?
 
   booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
 
   @@index([bookingId])
-  @@index([omiseChargeId])
 }
 
 enum PaymentMethod {
-  CARD
   PROMPTPAY
 }
 

@@ -14,7 +14,11 @@ export default async function CheckoutPage({
 
   const booking = await prisma.booking.findUnique({
     where: { id: bookingId },
-    include: { items: { include: { zone: true, table: true } }, event: true },
+    include: {
+      items: { include: { zone: true, table: true } },
+      payments: { orderBy: { createdAt: "desc" } },
+      event: true,
+    },
   });
 
   if (!booking || booking.userId !== session.user.id) {
@@ -37,6 +41,10 @@ export default async function CheckoutPage({
           subtotalSatang: item.subtotalSatang,
           zone: { name: item.zone.name },
           table: item.table ? { label: item.table.label } : null,
+        })),
+        payments: booking.payments.map((p) => ({
+          status: p.status,
+          failureMessage: p.failureMessage,
         })),
         event: { name: booking.event.name },
       }}
