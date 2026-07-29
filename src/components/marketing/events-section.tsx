@@ -1,5 +1,3 @@
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import { formatSatangRange } from "@/lib/money";
 
 type TierCard = {
@@ -18,7 +16,7 @@ export function EventsSection({ tiers }: { tiers: TierCard[] }) {
       <div className="mx-auto w-full max-w-6xl">
         <div>
           <h2 className="font-heading text-2xl font-bold text-white sm:text-5xl">
-            Select your frequency
+            Select your table
           </h2>
         </div>
 
@@ -47,16 +45,6 @@ export function EventsSection({ tiers }: { tiers: TierCard[] }) {
                     ))}
                   </ul>
                 )}
-
-                <Button
-                  variant="outline"
-                  disabled={tier.soldOut}
-                  className="border-amber-400 text-amber-400 hover:bg-amber-400 hover:text-black mt-auto font-mono text-xs uppercase tracking-[0.15em]"
-                  nativeButton={false}
-                  render={<Link href="/book" />}
-                >
-                  Book now
-                </Button>
               </div>
             </div>
           ))}

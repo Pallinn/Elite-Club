@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, useState } from "react";
-import { CANVAS, FLOOR_LAYOUTS, type FloorLayout } from "@/lib/venue-map";
+import { CANVAS, FLOOR_LAYOUTS, type FloorLayout, type VenueFurniture } from "@/lib/venue-map";
 
 export type FloorTable = {
   key: string;
@@ -150,6 +150,40 @@ function FloorBase({ layout }: { layout: FloorLayout }) {
   );
 }
 
+// Furniture rects are rotated/skewed to fit the walls (a plain `rotate(...)`
+// for the ones running along a straight wall, a shearing `matrix(...)` for
+// the one diagonal piece) - fine for the rect itself, but a label nested
+// inside that same transform came out sideways or slanted instead of
+// reading as a normal horizontal word. This maps the rect's local center
+// through whichever transform the piece uses to find where it actually
+// lands on screen, so its label can always be drawn separately, flat and
+// horizontal.
+function furnitureLabelPos(f: VenueFurniture): { x: number; y: number } | null {
+  const cx = f.x + f.width / 2;
+  const cy = f.y + f.height / 2;
+  if (!f.transform) return null;
+
+  const matrix = f.transform.match(/^matrix\(([^)]+)\)$/);
+  if (matrix) {
+    const [a, b, c, d, e, fy] = matrix[1].split(/[\s,]+/).map(Number);
+    return { x: a * cx + c * cy + e, y: b * cx + d * cy + fy };
+  }
+
+  const rotate = f.transform.match(/^rotate\(([^)]+)\)$/);
+  if (rotate) {
+    const [deg, px, py] = rotate[1].trim().split(/[\s,]+/).map(Number);
+    const rad = (deg * Math.PI) / 180;
+    const sin = Math.sin(rad);
+    const cos = Math.cos(rad);
+    return {
+      x: px + (cx - px) * cos - (cy - py) * sin,
+      y: py + (cx - px) * sin + (cy - py) * cos,
+    };
+  }
+
+  return null;
+}
+
 // Sofas and stools - drawn *after* the tables/VVIP zone polygons (see
 // FloorPlanMap's render order) so the sofa sits on top of a VVIP zone's
 // tint instead of being washed out underneath it. Solid opaque white, no
@@ -161,25 +195,44 @@ function FloorBase({ layout }: { layout: FloorLayout }) {
 function FloorFurniture({ layout }: { layout: FloorLayout }) {
   return (
     <>
-      {layout.furniture.map((f, i) => (
-        <g key={i} transform={f.transform} style={{ pointerEvents: "none" }}>
-          <rect x={f.x} y={f.y} width={f.width} height={f.height} rx={f.rx} fill="oklch(1 0 0)" />
-          {f.label && (
-            <text
-              x={f.x + f.width / 2}
-              y={f.y + f.height / 2}
-              fill="oklch(0.2 0 0)"
-              fontSize={Math.min(f.width, f.height) * 0.35}
-              textAnchor="middle"
-              dominantBaseline="middle"
-              fontFamily="var(--font-google-sans)"
-              letterSpacing={1}
-            >
-              {f.label}
-            </text>
-          )}
-        </g>
-      ))}
+      {layout.furniture.map((f, i) => {
+        const labelPos = f.label ? furnitureLabelPos(f) : null;
+        return (
+          <g key={i} style={{ pointerEvents: "none" }}>
+            <g transform={f.transform}>
+              <rect x={f.x} y={f.y} width={f.width} height={f.height} rx={f.rx} fill="oklch(1 0 0)" />
+              {f.label && !labelPos && (
+                <text
+                  x={f.x + f.width / 2}
+                  y={f.y + f.height / 2}
+                  fill="oklch(0.2 0 0)"
+                  fontSize={Math.min(f.width, f.height) * 0.35}
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  fontFamily="var(--font-google-sans)"
+                  letterSpacing={1}
+                >
+                  {f.label}
+                </text>
+              )}
+            </g>
+            {labelPos && (
+              <text
+                x={labelPos.x}
+                y={labelPos.y}
+                fill="oklch(0.2 0 0)"
+                fontSize={Math.min(f.width, f.height) * 0.35}
+                textAnchor="middle"
+                dominantBaseline="middle"
+                fontFamily="var(--font-google-sans)"
+                letterSpacing={1}
+              >
+                {f.label}
+              </text>
+            )}
+          </g>
+        );
+      })}
 
       {layout.furnitureCircles.map((c, i) => (
         <circle

@@ -45,7 +45,8 @@ export async function sendPurchaseEmail(params: {
 export async function sendJoinEmail(params: {
   to: string;
   logoPng: Buffer;
-  ticketNumber: string;
+  tableNumber: string;
+  tableCode: string;
 }) {
   await getResendClient().emails.send({
     from: EMAIL_FROM,
@@ -53,7 +54,8 @@ export async function sendJoinEmail(params: {
     subject: "You're in — NO SIGNAL",
     react: JoinEmail({
       logoCid: "cid:logo",
-      ticketNumber: params.ticketNumber,
+      tableNumber: params.tableNumber,
+      tableCode: params.tableCode,
     }),
     attachments: [{ filename: "logo.png", content: params.logoPng, contentId: "logo" }],
   });

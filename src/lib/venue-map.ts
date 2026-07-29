@@ -108,7 +108,7 @@ export const FLOOR_LAYOUTS: Record<1 | 2, FloorLayout> = {
     ],
     shapes: [],
     labels: [{ x: 1130, y: 139, text: "← Entrance", align: "end" }],
-    stairs: { x: 485, y: 611, text: "To 2nd Floor →", align: "middle" },
+    stairs: { x: 485, y: 611, text: "To M Floor →", align: "middle" },
     furniture: [
       // VVIP1 lounge sofas — one continuous vertical bar (the two rects
       // Figma split it into were flush, so merged into one) plus the
@@ -157,7 +157,7 @@ export const FLOOR_LAYOUTS: Record<1 | 2, FloorLayout> = {
     ],
     shapes: [],
     labels: [],
-    stairs: { x: 373.5, y: 523.5, text: "← To 1st Floor", align: "middle" },
+    stairs: { x: 373.5, y: 523.5, text: "← To Ground Floor", align: "middle" },
     furniture: [
       { x: 0, y: 674, width: 52, height: 153, label: "SOFA" },
       { x: 47, y: 827, width: 39, height: 448, transform: "rotate(-90 47 827)", label: "SOFA" },

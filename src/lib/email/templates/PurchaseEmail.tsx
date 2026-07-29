@@ -59,8 +59,6 @@ export function PurchaseEmail({
 
           <Text style={{ color: "#d4d4d4", fontSize: 14, lineHeight: "22px", marginTop: 20 }}>
             Thank you for purchasing a table for <strong>NO SIGNAL</strong>.
-            <br />
-            Your booking has been confirmed.
           </Text>
 
           {tables.map((t, i) => (
@@ -110,10 +108,6 @@ export function PurchaseEmail({
               >
                 CONFIRMED
               </Text>
-
-              <Text style={{ color: "#737373", fontSize: 11, margin: "12px 0 0" }}>
-                {t.ticketNumber}
-              </Text>
             </Section>
           ))}
 
@@ -126,6 +120,8 @@ export function PurchaseEmail({
             }}
           >
             Present your Table Code for verification at the event.
+            <br />
+            The exact location will drop 1 day before the event.
           </Text>
 
           <Hr style={{ borderColor: "#262626", margin: "32px 0 20px" }} />

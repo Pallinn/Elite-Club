@@ -13,10 +13,12 @@ import {
 
 export function JoinEmail({
   logoCid,
-  ticketNumber,
+  tableNumber,
+  tableCode,
 }: {
   logoCid: string;
-  ticketNumber: string;
+  tableNumber: string;
+  tableCode: string;
 }) {
   return (
     <Html>
@@ -68,7 +70,7 @@ export function JoinEmail({
                 textTransform: "uppercase",
               }}
             >
-              Ticket Number
+              Table No.
             </Text>
             <Text
               style={{
@@ -79,7 +81,30 @@ export function JoinEmail({
                 margin: 0,
               }}
             >
-              {ticketNumber}
+              {tableNumber}
+            </Text>
+
+            <Text
+              style={{
+                color: "#a3a3a3",
+                fontSize: 11,
+                letterSpacing: 3,
+                margin: "24px 0 12px",
+                textTransform: "uppercase",
+              }}
+            >
+              Table Code
+            </Text>
+            <Text
+              style={{
+                color: "#f97316",
+                fontSize: 22,
+                fontWeight: 700,
+                letterSpacing: 2,
+                margin: 0,
+              }}
+            >
+              {tableCode}
             </Text>
           </Section>
 
@@ -91,7 +116,7 @@ export function JoinEmail({
               marginTop: 28,
             }}
           >
-            Present your ticket number at the entrance for check-in.
+            The exact location will drop 1 day before the event.
           </Text>
 
           <Hr style={{ borderColor: "#262626", margin: "32px 0 20px" }} />

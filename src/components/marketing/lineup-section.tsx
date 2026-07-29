@@ -46,7 +46,7 @@ export function LineupSection() {
 
               <div className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden px-3">
                 <span className="text-center font-heading text-3xl font-bold uppercase leading-none tracking-tight text-orange-500 opacity-70 transition-opacity duration-500 group-hover:opacity-70 sm:text-5xl sm:opacity-0 sm:group-hover:opacity-70 md:text-6xl">
-                  {artist.name}
+                  DJ {artist.name}
                 </span>
               </div>
             </div>

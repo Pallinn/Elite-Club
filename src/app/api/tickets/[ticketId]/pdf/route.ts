@@ -23,7 +23,12 @@ export async function GET(
     },
   });
 
-  if (!ticket || ticket.bookingItem.booking.userId !== session.user.id) {
+  const canView =
+    ticket &&
+    (ticket.holderUserId === session.user.id ||
+      ticket.bookingItem.booking.userId === session.user.id);
+
+  if (!ticket || !canView) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 

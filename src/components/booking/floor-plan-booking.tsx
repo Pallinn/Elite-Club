@@ -78,7 +78,7 @@ export function FloorPlanBooking({
                     : "text-neutral-400 hover:text-white"
                 }`}
               >
-                Floor {f}
+                {f === 1 ? "Ground Floor" : "M Floor"}
               </button>
             ))}
           </div>

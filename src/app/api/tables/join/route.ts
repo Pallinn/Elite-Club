@@ -73,7 +73,8 @@ export async function POST(request: Request) {
     await sendJoinEmail({
       to: session.user.email!,
       logoPng: getLogoPngBuffer(),
-      ticketNumber: ticket.ticketNumber,
+      tableNumber: item.table.label,
+      tableCode: code,
     });
   } catch (err) {
     console.error(`Failed to send join-ticket email for ticket ${ticket.id}:`, err);
