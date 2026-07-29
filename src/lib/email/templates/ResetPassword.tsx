@@ -21,10 +21,10 @@ export function ResetPasswordEmail({
     <Html>
       <Head />
       <Preview>Reset your No Signal password</Preview>
-      <Body style={{ backgroundColor: "#0a0a0a", fontFamily: "sans-serif" }}>
+      <Body style={{ backgroundColor: "#000000", fontFamily: "sans-serif" }}>
         <Container
           style={{
-            backgroundColor: "#171717",
+            backgroundColor: "#000000",
             borderRadius: 12,
             padding: 32,
             margin: "40px auto",

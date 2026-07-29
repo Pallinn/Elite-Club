@@ -27,10 +27,10 @@ export function PurchaseEmail({
     <Html>
       <Head />
       <Preview>Thank you for your purchase — your NO SIGNAL table is confirmed.</Preview>
-      <Body style={{ backgroundColor: "#0a0a0a", fontFamily: "sans-serif", margin: 0 }}>
+      <Body style={{ backgroundColor: "#000000", fontFamily: "sans-serif", margin: 0 }}>
         <Container
           style={{
-            backgroundColor: "#111111",
+            backgroundColor: "#000000",
             borderRadius: 12,
             padding: 40,
             margin: "40px auto",
