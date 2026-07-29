@@ -476,7 +476,7 @@ export function FloorPlanMap({
           y={0}
           width={FLOOR_LAYOUTS[1].width}
           height={FLOOR_LAYOUTS[1].height}
-          fill="oklch(0.55 0 0 / 65%)"
+          fill="oklch(0.4 0 0 / 82%)"
         />
       </g>
 
