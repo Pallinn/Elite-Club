@@ -7,7 +7,7 @@ const LINEUP = [
   { name: "AJ", back: "/images/back_AJ.jpg", photo: "/images/dj_aj.png" },
   { name: "ARTY", back: "/images/back_R-TY.jpg", photo: "/images/dj_R-TY.png" },
   { name: "KENYA", back: "/images/back_KENYA.jpg", photo: "/images/dj_kenya.png" },
-  { name: "TBA", back: "/images/back_AJ.jpg", photo: "/images/dj_aj.png" },
+  { name: "KYU", back: "/images/back_KYU.jpg", photo: "/images/dj_KYU.png" },
 ];
 
 export function LineupSection() {
