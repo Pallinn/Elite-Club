@@ -1,6 +1,5 @@
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@/generated/prisma/client";
-import { activeBookingItemFilter } from "@/lib/availability";
 
 type Db = typeof prisma | Prisma.TransactionClient;
 
@@ -16,9 +15,9 @@ export async function hasActiveHold(
 ): Promise<{ tableLabel: string } | null> {
   const item = await db.bookingItem.findFirst({
     where: {
-      ...activeBookingItemFilter(),
+      isActive: true,
       tableId: { not: null },
-      booking: { userId, eventId, status: "HOLD" },
+      booking: { userId, eventId, status: "HOLD", holdExpiresAt: { gt: new Date() } },
     },
     include: { table: true },
   });

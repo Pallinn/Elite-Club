@@ -3,8 +3,10 @@ import { get } from "@vercel/blob";
 import { auth } from "@/lib/auth";
 import { isEligibleForConnect } from "@/lib/connect";
 
-// Only serve blobs from our own private store's host - prevents this
-// authenticated proxy from being used to fetch arbitrary external URLs.
+// Only serve blobs from our own private store's host, and only under the
+// connect/ prefix - prevents this proxy (reachable by any ticket holder, not
+// just admins) from being used to fetch arbitrary external URLs or other
+// private blobs in the same store, e.g. payment slip images under slips/.
 const PRIVATE_BLOB_HOST = /^[a-z0-9-]+\.private\.blob\.vercel-storage\.com$/i;
 
 export async function GET(request: Request) {
@@ -27,7 +29,7 @@ export async function GET(request: Request) {
   } catch {
     return NextResponse.json({ error: "Invalid url" }, { status: 400 });
   }
-  if (!PRIVATE_BLOB_HOST.test(parsed.hostname)) {
+  if (!PRIVATE_BLOB_HOST.test(parsed.hostname) || !parsed.pathname.startsWith("/connect/")) {
     return NextResponse.json({ error: "Invalid url" }, { status: 400 });
   }
 
