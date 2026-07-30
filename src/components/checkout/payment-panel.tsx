@@ -20,7 +20,6 @@ export function PaymentPanel({ bookingId }: { bookingId: string }) {
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [verifying, setVerifying] = useState(false);
-  const [testLoading, setTestLoading] = useState(false);
 
   async function generateQr() {
     setLoading(true);
@@ -62,26 +61,6 @@ export function PaymentPanel({ bookingId }: { bookingId: string }) {
       router.refresh();
     } finally {
       setVerifying(false);
-    }
-  }
-
-  async function markPaidForTesting() {
-    setTestLoading(true);
-    try {
-      const res = await fetch("/api/checkout/test-complete", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bookingId }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error ?? "Couldn't mark this as paid.");
-        return;
-      }
-      toast.success("Marked as paid (test only).");
-      router.refresh();
-    } finally {
-      setTestLoading(false);
     }
   }
 
@@ -139,21 +118,6 @@ export function PaymentPanel({ bookingId }: { bookingId: string }) {
           </Button>
         </div>
       )}
-
-      <div className="mt-4 rounded-lg border border-dashed border-amber-500/40 bg-amber-500/5 p-4">
-        <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-amber-400">Demo</p>
-        <p className="mt-1 text-xs text-neutral-400">
-          Skip slip verification entirely and pretend this booking was just paid.
-        </p>
-        <Button
-          variant="outline"
-          onClick={markPaidForTesting}
-          disabled={testLoading}
-          className="mt-3 w-full border-amber-500/40 font-mono text-xs uppercase tracking-[0.15em] text-amber-400"
-        >
-          {testLoading ? "Marking paid..." : "Click to finish payment"}
-        </Button>
-      </div>
     </div>
   );
 }
