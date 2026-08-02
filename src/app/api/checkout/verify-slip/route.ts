@@ -92,8 +92,10 @@ export async function POST(request: Request) {
     }
   }
 
+  // Include FAILED so a customer who uploaded the wrong slip can immediately
+  // retry with the correct one, without having to refresh and regenerate a QR.
   const payment = await prisma.payment.findFirst({
-    where: { bookingId, status: "PENDING" },
+    where: { bookingId, status: { in: ["PENDING", "FAILED"] } },
     orderBy: { createdAt: "desc" },
   });
   if (!payment) {
@@ -117,6 +119,30 @@ export async function POST(request: Request) {
   }
 
   const { data } = slipResult;
+
+  let receiverCheck: { ok: true } | { ok: false; message: string };
+  try {
+    receiverCheck = checkReceiverAccount(data.receiver.account.name);
+  } catch (err) {
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : "Payment verification is misconfigured." },
+      { status: 500 }
+    );
+  }
+  if (!receiverCheck.ok) {
+    await prisma.payment.update({
+      where: { id: payment.id },
+      data: {
+        status: "FAILED",
+        slipImageUrl,
+        rawResponse: data as unknown as object,
+        failureCode: "RECEIVER_MISMATCH",
+        failureMessage: receiverCheck.message,
+      },
+    });
+    return NextResponse.json({ error: receiverCheck.message }, { status: 422 });
+  }
+
   const paidAmountSatang = Math.round(data.amount * 100);
 
   if (paidAmountSatang !== payment.amountSatang) {
@@ -200,6 +226,44 @@ async function guardBookingForVerification(
     return { error: NextResponse.json({ error: "This booking is not awaiting payment." }, { status: 409 }) };
   }
   return { error: null };
+}
+
+// Strips common Thai/English honorifics and collapses whitespace so
+// "นาย สมชาย ใจดี" and "MR. SOMCHAI JAIDEE" both normalize comparably.
+function normalizeAccountName(name: string): string {
+  return name
+    .toUpperCase()
+    .replace(/^(นางสาว|นาย|นาง|น\.ส\.|เด็กหญิง|เด็กชาย|ด\.ญ\.|ด\.ช\.|MR\.?|MRS\.?|MS\.?|MISS)\s*/u, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+// Slip2Go masks the receiver name for privacy (e.g. "ด.ญ. พริมรตา อ" for
+// "พริมรตา อารายางกูร" - surname truncated to its first character), so we
+// can't compare for exact equality. Instead check each word Slip2Go gave us
+// is a prefix of the corresponding word in the configured full name.
+function receiverNameMatches(actualName: string, expectedName: string): boolean {
+  const actualWords = normalizeAccountName(actualName).split(" ").filter(Boolean);
+  const expectedWords = normalizeAccountName(expectedName).split(" ").filter(Boolean);
+  return (
+    actualWords.length > 0 &&
+    actualWords.length <= expectedWords.length &&
+    actualWords.every((word, i) => expectedWords[i].startsWith(word))
+  );
+}
+
+function checkReceiverAccount(receiverName: string): { ok: true } | { ok: false; message: string } {
+  const expected = process.env.PROMPTPAY_RECEIVER_NAME;
+  if (!expected) {
+    throw new Error("PROMPTPAY_RECEIVER_NAME is not configured.");
+  }
+  if (!receiverNameMatches(receiverName, expected)) {
+    return {
+      ok: false,
+      message: "This slip was paid into a different account than our PromptPay ID. Please pay using the QR shown.",
+    };
+  }
+  return { ok: true };
 }
 
 function isUniqueConstraintError(err: unknown): boolean {

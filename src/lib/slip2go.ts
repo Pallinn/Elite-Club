@@ -15,7 +15,16 @@ export type Slip2GoSlipData = {
   ref2: string | null;
   ref3: string | null;
   sender: { account: { name: string } };
-  receiver: { account: { name: string } };
+  receiver: {
+    account: {
+      name: string;
+      // Masked (e.g. "xxx-x-x5366-x") - not usable for exact matching, but
+      // present for audit/debugging.
+      proxy?: { type: string; account: string } | null;
+      bank?: { account: string } | null;
+    };
+    bank: { id: string; name: string };
+  };
 };
 
 export type Slip2GoResult =
