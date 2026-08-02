@@ -24,16 +24,20 @@ export default async function BookPage() {
   // Availability reads already exclude a lapsed hold (see
   // activeBookingItemFilter), and /api/holds itself re-sweeps the specific
   // table right before creating a new one - so this isn't needed for
-  // correctness. It's extra hygiene: /book is the highest-traffic page, so
-  // sweeping here keeps stale HOLD rows from sitting around (looking stuck
-  // in the admin dashboard) between cron runs, for any table, not just the
-  // one someone happens to click next.
-  const expiredIds = await expireStaleHolds(prisma, { eventId: event.id });
-  for (const id of expiredIds) {
-    await recordAudit({ action: "booking.expired", entityType: "Booking", entityId: id, actorLabel: "system" });
-  }
-
-  const zones = await getEventAvailability(event.id);
+  // correctness, and doesn't need to block the availability read below.
+  // It's extra hygiene: /book is the highest-traffic page, so sweeping here
+  // keeps stale HOLD rows from sitting around (looking stuck in the admin
+  // dashboard) between cron runs, for any table, not just the one someone
+  // happens to click next.
+  const [zones, expiredIds] = await Promise.all([
+    getEventAvailability(event.id),
+    expireStaleHolds(prisma, { eventId: event.id }),
+  ]);
+  await Promise.all(
+    expiredIds.map((id) =>
+      recordAudit({ action: "booking.expired", entityType: "Booking", entityId: id, actorLabel: "system" })
+    )
+  );
 
   const tables: FloorTable[] = zones.flatMap((zone) =>
     zone.tables.map((table) => ({
