@@ -4,7 +4,6 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Badge } from "@/components/ui/badge";
 import { formatSatang } from "@/lib/money";
-import { CancelHoldButton } from "@/components/account/cancel-hold-button";
 import { expireStaleHolds } from "@/lib/expire-holds";
 import { recordAudit } from "@/lib/audit";
 
@@ -24,7 +23,7 @@ export default async function MyBookingsPage() {
   }
 
   const bookings = await prisma.booking.findMany({
-    where: { userId: session.user.id },
+    where: { userId: session.user.id, status: "PAID" },
     orderBy: { createdAt: "desc" },
     include: { items: { include: { zone: true, table: true } }, event: true },
   });
@@ -61,11 +60,7 @@ export default async function MyBookingsPage() {
           {bookings.map((booking) => (
             <Link
               key={booking.id}
-              href={
-                booking.status === "HOLD"
-                  ? `/checkout/${booking.id}`
-                  : `/account/bookings/${booking.id}`
-              }
+              href={`/account/bookings/${booking.id}`}
               className="block rounded-lg border border-white/10 bg-neutral-950 p-4 hover:border-white/30"
             >
               <div className="flex items-center justify-between">
@@ -81,12 +76,7 @@ export default async function MyBookingsPage() {
                   <span className="text-sm text-white">
                     {formatSatang(booking.totalSatang)}
                   </span>
-                  <Badge
-                    variant={booking.status === "PAID" ? "default" : "secondary"}
-                  >
-                    {booking.status}
-                  </Badge>
-                  {booking.status === "HOLD" && <CancelHoldButton bookingId={booking.id} />}
+                  <Badge>{booking.status}</Badge>
                 </div>
               </div>
             </Link>

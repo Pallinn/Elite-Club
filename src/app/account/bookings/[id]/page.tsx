@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ResendTicketsButton } from "@/components/account/resend-tickets-button";
 import { CopyCodeButton } from "@/components/account/copy-code-button";
+import { RemoveGuestButton } from "@/components/account/remove-guest-button";
 
 export default async function BookingDetailPage({
   params,
@@ -20,7 +21,7 @@ export default async function BookingDetailPage({
     where: { id },
     include: {
       event: true,
-      items: { include: { zone: true, table: true, tickets: true } },
+      items: { include: { zone: true, table: true, tickets: { include: { holder: true } } } },
     },
   });
 
@@ -74,21 +75,48 @@ export default async function BookingDetailPage({
             <div className="space-y-3">
               {tableJoinCodes.map((item) => {
                 const claimed = item.tickets?.length ?? 0;
+                const guests = item.tickets.filter((t) => t.holderUserId !== booking.userId);
                 return (
                   <Card key={item.id} className="border-primary/30 bg-primary/5">
-                    <CardContent className="flex flex-wrap items-center justify-between gap-3">
-                      <div>
-                        <p className="text-sm text-white">
-                          {item.table?.label} — share this code so friends can join
-                        </p>
-                        <p className="mt-1 font-mono text-2xl font-bold tracking-[0.3em] text-primary">
-                          {item.joinCode}
-                        </p>
-                        <p className="mt-1 text-xs text-neutral-400">
-                          {claimed} of {item.table?.capacity} seats claimed
-                        </p>
+                    <CardContent className="space-y-4">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                          <p className="text-sm text-white">
+                            {item.table?.label} — share this code so friends can join
+                          </p>
+                          <p className="mt-1 font-mono text-2xl font-bold tracking-[0.3em] text-primary">
+                            {item.joinCode}
+                          </p>
+                          <p className="mt-1 text-xs text-neutral-400">
+                            {claimed} of {item.table?.capacity} seats claimed
+                          </p>
+                        </div>
+                        <CopyCodeButton code={item.joinCode ?? ""} />
                       </div>
-                      <CopyCodeButton code={item.joinCode ?? ""} />
+
+                      {guests.length > 0 && (
+                        <div className="space-y-2 border-t border-white/10 pt-3">
+                          <p className="text-xs uppercase tracking-[0.15em] text-neutral-400">
+                            Guests at this table
+                          </p>
+                          {guests.map((ticket) => (
+                            <div
+                              key={ticket.id}
+                              className="flex items-center justify-between gap-3 text-sm"
+                            >
+                              <div>
+                                <p className="text-white">
+                                  {ticket.holder?.name ?? ticket.holder?.email ?? "Unknown guest"}
+                                </p>
+                                {ticket.status === "USED" && (
+                                  <p className="text-xs text-neutral-400">Checked in</p>
+                                )}
+                              </div>
+                              <RemoveGuestButton ticketId={ticket.id} />
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 );
