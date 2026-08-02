@@ -23,7 +23,7 @@ export default async function MyBookingsPage() {
   }
 
   const bookings = await prisma.booking.findMany({
-    where: { userId: session.user.id, status: "PAID" },
+    where: { userId: session.user.id, status: { in: ["PAID", "HOLD"] } },
     orderBy: { createdAt: "desc" },
     include: { items: { include: { zone: true, table: true } }, event: true },
   });
@@ -60,7 +60,11 @@ export default async function MyBookingsPage() {
           {bookings.map((booking) => (
             <Link
               key={booking.id}
-              href={`/account/bookings/${booking.id}`}
+              href={
+                booking.status === "HOLD"
+                  ? `/checkout/${booking.id}`
+                  : `/account/bookings/${booking.id}`
+              }
               className="block rounded-lg border border-white/10 bg-neutral-950 p-4 hover:border-white/30"
             >
               <div className="flex items-center justify-between">

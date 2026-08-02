@@ -79,7 +79,7 @@ export async function POST(request: Request) {
           });
           if (activeHold) {
             throw new HoldConflictError(
-              `You already have a reservation for ${activeHold.tableLabel} in progress. Finish or cancel it before starting another.`
+              `You already have a reservation for ${activeHold.tableLabel} in progress. You can continue it from Profile → My Bookings, or finish/cancel it before starting another.`
             );
           }
           requestedTableIds.add(table.id);
