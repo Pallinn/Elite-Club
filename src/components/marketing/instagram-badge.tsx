@@ -4,7 +4,7 @@ import Image from "next/image";
 export function InstagramBadge() {
   return (
     <Link
-      href="https://www.instagram.com/elite.bkkclub/"
+      href="https://www.instagram.com/elitebkk.co/"
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Elite on Instagram"
